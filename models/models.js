@@ -26,7 +26,7 @@ const LovelistProduct = sequelize.define('lovelist_product', {
 });
 
 const Product = sequelize.define('product', {
-  id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
+  id: { type: DataTypes.STRING, primaryKey: true },
   title: { type: DataTypes.STRING, unique: true, allowNull: false },
   description: { type: DataTypes.STRING },
   photo: { type: DataTypes.STRING, allowNull: false },
@@ -34,6 +34,7 @@ const Product = sequelize.define('product', {
   isNew: { type: DataTypes.BOOLEAN },
   rating: { type: DataTypes.DECIMAL, defaultValue: 0 },
   price: { type: DataTypes.DECIMAL, allowNull: false },
+  sale: { type: DataTypes.DECIMAL },
 });
 
 const Category = sequelize.define('category', {
