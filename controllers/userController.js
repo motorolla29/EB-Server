@@ -54,12 +54,17 @@ class UserController {
     if (!comparePassword) {
       return next(ApiError.internal({ password: 'Incorrect password' }));
     }
-    const token = generateJwt(user.id, user.email, user.role);
+    const token = generateJwt(user.id, user.name, user.email, user.role);
     return res.json({ token });
   }
 
   async check(req, res, next) {
-    const token = generateJwt(req.user.id, req.user.email, req.user.role);
+    const token = generateJwt(
+      req.user.id,
+      req.user.name,
+      req.user.email,
+      req.user.role
+    );
     return res.json({ token });
   }
 }
