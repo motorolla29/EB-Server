@@ -13,22 +13,40 @@ const Basket = sequelize.define('basket', {
   id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
 });
 
+const BasketProduct = sequelize.define('basket_product', {
+  id: { type: DataTypes.STRING, primaryKey: true },
+  title: { type: DataTypes.STRING, unique: true, allowNull: false },
+  description: { type: DataTypes.TEXT },
+  photo: { type: DataTypes.STRING, allowNull: false },
+  availableQuantity: { type: DataTypes.INTEGER },
+  isNew: { type: DataTypes.BOOLEAN },
+  rating: { type: DataTypes.DECIMAL, defaultValue: 0 },
+  price: { type: DataTypes.DECIMAL, allowNull: false },
+  sale: { type: DataTypes.DECIMAL },
+  quantity: { type: DataTypes.INTEGER, allowNull: false },
+});
+
 const Lovelist = sequelize.define('lovelist', {
   id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
 });
 
-const BasketProduct = sequelize.define('basket_product', {
-  id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
-});
-
 const LovelistProduct = sequelize.define('lovelist_product', {
-  id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
+  id: { type: DataTypes.STRING, primaryKey: true },
+  title: { type: DataTypes.STRING, unique: true, allowNull: false },
+  description: { type: DataTypes.TEXT },
+  photo: { type: DataTypes.STRING, allowNull: false },
+  availableQuantity: { type: DataTypes.INTEGER },
+  isNew: { type: DataTypes.BOOLEAN },
+  rating: { type: DataTypes.DECIMAL, defaultValue: 0 },
+  price: { type: DataTypes.DECIMAL, allowNull: false },
+  sale: { type: DataTypes.DECIMAL },
+  quantity: { type: DataTypes.INTEGER, allowNull: false },
 });
 
 const Product = sequelize.define('product', {
   id: { type: DataTypes.STRING, primaryKey: true },
   title: { type: DataTypes.STRING, unique: true, allowNull: false },
-  description: { type: DataTypes.STRING },
+  description: { type: DataTypes.TEXT },
   photo: { type: DataTypes.STRING, allowNull: false },
   availableQuantity: { type: DataTypes.INTEGER },
   isNew: { type: DataTypes.BOOLEAN },

@@ -1,0 +1,82 @@
+const { BasketProduct, Basket } = require('../models/models');
+
+class BasketController {
+  async getBasket(req, res) {
+    const user = req.user;
+    const basket = await BasketProduct.findAll({
+      where: { basketId: user.id },
+    });
+    return res.json(basket);
+  }
+
+  async addProductToBasket(req, res, next) {
+    const user = req.user;
+    const {
+      id,
+      title,
+      description,
+      photo,
+      availableQuantity,
+      isNew,
+      rating,
+      price,
+      sale,
+    } = req.body;
+    const basketProduct = await BasketProduct.findOne({
+      where: { basketId: user.id, id: id },
+    });
+    if (basketProduct && basketProduct.quantity) {
+      await basketProduct.increment('quantity');
+    } else {
+      await BasketProduct.create({
+        basketId: user.id,
+        id,
+        title,
+        description,
+        photo,
+        availableQuantity,
+        isNew,
+        rating,
+        price,
+        sale,
+        quantity: 1,
+      });
+    }
+    return res.json(
+      await BasketProduct.findAll({
+        where: { basketId: user.id },
+      })
+    );
+  }
+
+  async decrementProductInBasket(req, res, next) {
+    const user = req.user;
+    const { id } = req.body;
+    const basketProduct = await BasketProduct.findOne({
+      where: { basketId: user.id, id: id },
+    });
+    if (basketProduct && basketProduct.quantity && basketProduct.quantity > 1) {
+      await basketProduct.decrement('quantity');
+    }
+    return res.json(
+      await BasketProduct.findAll({
+        where: { basketId: user.id },
+      })
+    );
+  }
+
+  async removeProductFromBasket(req, res, next) {
+    const user = req.user;
+    const { id } = req.body;
+    await BasketProduct.destroy({
+      where: { basketId: user.id, id: id },
+    });
+    return res.json(
+      await BasketProduct.findAll({
+        where: { basketId: user.id },
+      })
+    );
+  }
+}
+
+module.exports = new BasketController();
