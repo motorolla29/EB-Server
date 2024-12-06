@@ -5,6 +5,7 @@ class BasketController {
     const user = req.user;
     const basket = await BasketProduct.findAll({
       where: { basketId: user.id },
+      order: [['createdAt', 'DESC']],
     });
     return res.json(basket);
   }
@@ -45,6 +46,7 @@ class BasketController {
     return res.json(
       await BasketProduct.findAll({
         where: { basketId: user.id },
+        order: [['createdAt', 'DESC']],
       })
     );
   }
@@ -61,6 +63,7 @@ class BasketController {
     return res.json(
       await BasketProduct.findAll({
         where: { basketId: user.id },
+        order: [['createdAt', 'DESC']],
       })
     );
   }
@@ -74,6 +77,7 @@ class BasketController {
     return res.json(
       await BasketProduct.findAll({
         where: { basketId: user.id },
+        order: [['createdAt', 'DESC']],
       })
     );
   }

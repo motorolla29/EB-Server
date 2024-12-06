@@ -36,8 +36,8 @@ class UserController {
       role,
       password: hashPassword,
     });
-    const basket = await Basket.create({ userId: user.id });
-    const lovelist = await Lovelist.create({ userId: user.id });
+    const basket = await Basket.create({ id: user.id, userId: user.id });
+    const lovelist = await Lovelist.create({ id: user.id, userId: user.id });
     const token = generateJwt(user.id, user.name, user.email, user.role);
     return res.json({ token });
   }
@@ -66,6 +66,22 @@ class UserController {
       req.user.role
     );
     return res.json({ token });
+  }
+
+  async delete(req, res, next) {
+    try {
+      const user = req.user;
+      if (!user) {
+        return 'User with this ID not found';
+      }
+      await User.destroy({
+        where: { id: user.id },
+      });
+      return res.json(`User with ID ${user.id} successfully deleted`);
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      throw new Error('Error deleting user');
+    }
   }
 }
 

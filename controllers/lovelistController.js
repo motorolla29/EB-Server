@@ -5,6 +5,7 @@ class LovelistController {
     const user = req.user;
     const lovelist = await LovelistProduct.findAll({
       where: { lovelistId: user.id },
+      order: [['createdAt', 'DESC']],
     });
     return res.json(lovelist);
   }
@@ -26,7 +27,7 @@ class LovelistController {
       where: { lovelistId: user.id, id: id },
     });
     if (lovelistProduct) {
-      await LovelistProduct.destroy(lovelistProduct);
+      await LovelistProduct.destroy({ where: { lovelistId: user.id, id: id } });
     } else {
       await LovelistProduct.create({
         lovelistId: user.id,
@@ -44,6 +45,7 @@ class LovelistController {
     return res.json(
       await LovelistProduct.findAll({
         where: { lovelistId: user.id },
+        order: [['createdAt', 'DESC']],
       })
     );
   }

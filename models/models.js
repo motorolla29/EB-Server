@@ -10,7 +10,7 @@ const User = sequelize.define('user', {
 });
 
 const Basket = sequelize.define('basket', {
-  id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
+  id: { type: DataTypes.INTEGER, primaryKey: true },
 });
 
 const BasketProduct = sequelize.define('basket_product', {
@@ -20,14 +20,14 @@ const BasketProduct = sequelize.define('basket_product', {
   photo: { type: DataTypes.STRING, allowNull: false },
   availableQuantity: { type: DataTypes.INTEGER },
   isNew: { type: DataTypes.BOOLEAN },
-  rating: { type: DataTypes.DECIMAL, defaultValue: 0 },
-  price: { type: DataTypes.DECIMAL, allowNull: false },
-  sale: { type: DataTypes.DECIMAL },
+  rating: { type: DataTypes.FLOAT, defaultValue: 0 },
+  price: { type: DataTypes.FLOAT, allowNull: false },
+  sale: { type: DataTypes.FLOAT },
   quantity: { type: DataTypes.INTEGER, allowNull: false },
 });
 
 const Lovelist = sequelize.define('lovelist', {
-  id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
+  id: { type: DataTypes.INTEGER, primaryKey: true },
 });
 
 const LovelistProduct = sequelize.define('lovelist_product', {
@@ -37,10 +37,9 @@ const LovelistProduct = sequelize.define('lovelist_product', {
   photo: { type: DataTypes.STRING, allowNull: false },
   availableQuantity: { type: DataTypes.INTEGER },
   isNew: { type: DataTypes.BOOLEAN },
-  rating: { type: DataTypes.DECIMAL, defaultValue: 0 },
-  price: { type: DataTypes.DECIMAL, allowNull: false },
-  sale: { type: DataTypes.DECIMAL },
-  quantity: { type: DataTypes.INTEGER, allowNull: false },
+  rating: { type: DataTypes.FLOAT, defaultValue: 0 },
+  price: { type: DataTypes.FLOAT, allowNull: false },
+  sale: { type: DataTypes.FLOAT },
 });
 
 const Product = sequelize.define('product', {
@@ -50,9 +49,9 @@ const Product = sequelize.define('product', {
   photo: { type: DataTypes.STRING, allowNull: false },
   availableQuantity: { type: DataTypes.INTEGER },
   isNew: { type: DataTypes.BOOLEAN },
-  rating: { type: DataTypes.DECIMAL, defaultValue: 0 },
-  price: { type: DataTypes.DECIMAL, allowNull: false },
-  sale: { type: DataTypes.DECIMAL },
+  rating: { type: DataTypes.FLOAT, defaultValue: 0 },
+  price: { type: DataTypes.FLOAT, allowNull: false },
+  sale: { type: DataTypes.FLOAT },
 });
 
 const Category = sequelize.define('category', {
@@ -60,16 +59,16 @@ const Category = sequelize.define('category', {
   name: { type: DataTypes.STRING, unique: true, allowNull: false },
 });
 
-User.hasOne(Basket);
+User.hasOne(Basket, { onDelete: 'CASCADE' });
 Basket.belongsTo(User);
 
-User.hasOne(Lovelist);
+User.hasOne(Lovelist, { onDelete: 'CASCADE' });
 Lovelist.belongsTo(User);
 
-Basket.hasMany(BasketProduct);
+Basket.hasMany(BasketProduct, { onDelete: 'CASCADE' });
 BasketProduct.belongsTo(Basket);
 
-Lovelist.hasMany(LovelistProduct);
+Lovelist.hasMany(LovelistProduct, { onDelete: 'CASCADE' });
 LovelistProduct.belongsTo(Lovelist);
 
 Category.hasMany(Product);
