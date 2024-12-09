@@ -10,5 +10,6 @@ module.exports = new Sequelize(
     dialectModule: pg,
     host: process.env.DB_HOST,
     port: process.env.DB_PORT,
+    ssl: true,
   }
 );
