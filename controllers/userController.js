@@ -32,7 +32,7 @@ class UserController {
     const hashPassword = await bcrypt.hash(password, 5);
     const user = await User.create({
       name,
-      email,
+      email: email.toLowerCase(),
       role,
       password: hashPassword,
     });
@@ -44,7 +44,7 @@ class UserController {
 
   async login(req, res, next) {
     const { email, password } = req.body;
-    const user = await User.findOne({ where: { email } });
+    const user = await User.findOne({ where: { email: email.toLowerCase() } });
     if (!user) {
       return next(
         ApiError.internal({ email: 'User with such email not found' })
