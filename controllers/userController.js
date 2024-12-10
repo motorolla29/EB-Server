@@ -1,3 +1,5 @@
+const uuid = require('uuid');
+const path = require('path');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { User, Basket, Lovelist } = require('../models/models');
@@ -54,7 +56,13 @@ class UserController {
     if (!comparePassword) {
       return next(ApiError.internal({ password: 'Incorrect password' }));
     }
-    const token = generateJwt(user.id, user.name, user.email, user.role);
+    const token = generateJwt(
+      user.id,
+      user.name,
+      user.email,
+      user.role,
+      user.photo
+    );
     return res.json({ token });
   }
 
@@ -63,7 +71,8 @@ class UserController {
       req.user.id,
       req.user.name,
       req.user.email,
-      req.user.role
+      req.user.role,
+      req.user.photo
     );
     return res.json({ token });
   }
@@ -81,6 +90,30 @@ class UserController {
     } catch (error) {
       console.error('Error deleting user:', error);
       throw new Error('Error deleting user');
+    }
+  }
+
+  async setAvatar(req, res, next) {
+    try {
+      const userData = req.user;
+      if (!userData) {
+        return 'User with this ID not found';
+      }
+      const { photo } = req.files;
+      let fileName = uuid.v4() + 'USER_AVATAR' + photo.name;
+      photo.mv(path.resolve(__dirname, '..', 'static/user-avatars', fileName));
+      await User.update(
+        {
+          photo: fileName,
+        },
+        {
+          where: { id: userData.id },
+        }
+      );
+      return res.json(`User avatar successfully updated`);
+    } catch (error) {
+      console.error('Error loading user avatar:', error);
+      throw new Error('Error loading user avatar');
     }
   }
 }
