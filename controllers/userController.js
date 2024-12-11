@@ -6,8 +6,8 @@ const { User, Basket, Lovelist } = require('../models/models');
 
 const ApiError = require('../error/ApiError');
 
-const generateJwt = (id, name, email, role) => {
-  return jwt.sign({ id, name, email, role }, process.env.SECRET_KEY, {
+const generateJwt = (id, name, email, role, photo) => {
+  return jwt.sign({ id, name, email, role, photo }, process.env.SECRET_KEY, {
     expiresIn: '24h',
   });
 };
@@ -102,6 +102,7 @@ class UserController {
       const { photo } = req.files;
       let fileName = uuid.v4() + 'USER_AVATAR' + photo.name;
       photo.mv(path.resolve(__dirname, '..', 'static/user-avatars', fileName));
+
       await User.update(
         {
           photo: fileName,
@@ -110,10 +111,51 @@ class UserController {
           where: { id: userData.id },
         }
       );
-      return res.json(`User avatar successfully updated`);
+      const user = await User.findOne({
+        where: { id: userData.id },
+      });
+      const token = generateJwt(
+        user.id,
+        user.name,
+        user.email,
+        user.role,
+        user.photo
+      );
+      return res.json({ token });
     } catch (error) {
       console.error('Error loading user avatar:', error);
       throw new Error('Error loading user avatar');
+    }
+  }
+
+  async deleteAvatar(req, res, next) {
+    try {
+      const userData = req.user;
+      if (!userData) {
+        return 'User with this ID not found';
+      }
+      await User.update(
+        {
+          photo: null,
+        },
+        {
+          where: { id: userData.id },
+        }
+      );
+      const user = await User.findOne({
+        where: { id: userData.id },
+      });
+      const token = generateJwt(
+        user.id,
+        user.name,
+        user.email,
+        user.role,
+        user.photo
+      );
+      return res.json({ token });
+    } catch (error) {
+      console.error('Error deleting user avatar:', error);
+      throw new Error('Error deleting user avatar');
     }
   }
 }
