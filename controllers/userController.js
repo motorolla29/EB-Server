@@ -1,5 +1,6 @@
 const cloudinary = require('../config/cloudinary');
-const sharp = require('sharp');
+const path = require('path');
+const os = require('os'); // Для получения системного пути к временным файлам
 const fs = require('fs');
 const uuid = require('uuid');
 const bcrypt = require('bcryptjs');
@@ -103,9 +104,11 @@ class UserController {
       }
 
       const { photo } = req.files; // Получаем файл из запроса
+      //console.log(req.files);
       if (!photo) {
         return res.status(400).json({ message: 'No photo file provided' });
       }
+
       // Проверка типа файла
       const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg'];
       if (!allowedTypes.includes(photo.mimetype)) {
@@ -115,27 +118,27 @@ class UserController {
       // Генерация уникального имени для файла
       const fileName = `${uuid.v4()}_USER_AVATAR`;
 
-      // Путь для временного сохранения файла (используем `/tmp` для совместимости с Vercel)
-      const tempFilePath = `/tmp/${fileName}`;
+      // Путь для временного сохранения файла (`/tmp`на Vercel)
+      const tempFilePath = path.join(os.tmpdir(), fileName);
 
-      // Сжимаем файл перед загрузкой
-      await sharp(photo.tempFilePath)
-        .rotate() // Исправление ориентации на основе EXIF
-        .resize({ width: 1920, height: 1920, fit: 'inside' }) // Ограничиваем разрешение
-        .jpeg({ quality: 80 }) // Сжимаем качество до 80%
-        .toFile(tempFilePath);
+      // Сохраняем файл на сервере (это временное решение для тестов)
+      await fs.promises.writeFile(tempFilePath, photo.data);
 
       // Загрузка файла в Cloudinary
-      const uploadResult = await cloudinary.uploader.upload(tempFilePath, {
-        folder: 'user-avatars', // Папка для хранения аватаров
-        public_id: fileName, // Уникальное имя файла
-        overwrite: true, // Перезапись существующего файла с таким именем
-        resource_type: 'image', // Указываем тип ресурса
-      });
+      const uploadResult = await cloudinary.uploader.upload(
+        photo.tempFilePath,
+        {
+          folder: 'user-avatars', // Папка для хранения аватаров
+          public_id: fileName, // Уникальное имя файла
+          overwrite: true, // Перезапись существующего файла с таким именем
+          resource_type: 'image', // Указываем тип ресурса
+        }
+      );
 
       // Удаляем временный файл
       await fs.promises.unlink(tempFilePath);
 
+      // Получение текущего пользователя и удаление старого аватара, если нужно
       const user = await User.findOne({
         where: { id: userData.id },
       });
