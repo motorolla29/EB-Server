@@ -189,9 +189,15 @@ class UserController {
         return res.status(404).json({ message: 'User not found' });
       }
       if (!user.photo) {
-        return res
-          .status(400)
-          .json({ message: 'User does not have an avatar' });
+        return res.json({
+          token: generateJwt(
+            user.id,
+            user.name,
+            user.email,
+            user.role,
+            user.photo
+          ),
+        });
       }
       const publicId = `user-avatars/${user.photo
         .split('/')
