@@ -123,7 +123,6 @@ class UserController {
         .rotate() // Исправление ориентации на основе EXIF
         .resize({ width: 1920, height: 1920, fit: 'inside' }) // Ограничиваем разрешение
         .jpeg({ quality: 80 }) // Сжимаем качество до 80%
-        .withMetadata({ exif: false }) // Удаляем EXIF-данные для защиты конфиденциальности
         .toFile(tempFilePath);
 
       // Загрузка файла в Cloudinary
