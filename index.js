@@ -14,7 +14,12 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 app.use(express.static(path.resolve(__dirname, 'static')));
-app.use(fileUpload({}));
+app.use(
+  fileUpload({
+    useTempFiles: true,
+    tempFileDir: '/tmp/',
+  })
+);
 app.use('/api', router);
 
 // Последнийй middleware - обработка ошибок
