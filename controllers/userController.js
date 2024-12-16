@@ -9,8 +9,8 @@ const { User, Basket, Lovelist } = require('../models/models');
 
 const ApiError = require('../error/ApiError');
 
-const generateJwt = (id, name, email, role, photo) => {
-  return jwt.sign({ id, name, email, role, photo }, process.env.SECRET_KEY, {
+const generateJwt = (id, role) => {
+  return jwt.sign({ id, role }, process.env.SECRET_KEY, {
     expiresIn: '24h',
   });
 };
@@ -43,8 +43,8 @@ class UserController {
     });
     const basket = await Basket.create({ id: user.id, userId: user.id });
     const lovelist = await Lovelist.create({ id: user.id, userId: user.id });
-    const token = generateJwt(user.id, user.name, user.email, user.role);
-    return res.json({ token });
+    const token = generateJwt(user.id, user.role);
+    return res.json({ token, user });
   }
 
   async login(req, res, next) {
@@ -59,25 +59,22 @@ class UserController {
     if (!comparePassword) {
       return next(ApiError.internal({ password: 'Incorrect password' }));
     }
-    const token = generateJwt(
-      user.id,
-      user.name,
-      user.email,
-      user.role,
-      user.photo
-    );
-    return res.json({ token });
+    const token = generateJwt(user.id, user.role);
+    return res.json({ token, user });
   }
 
   async check(req, res, next) {
-    const token = generateJwt(
-      req.user.id,
-      req.user.name,
-      req.user.email,
-      req.user.role,
-      req.user.photo
-    );
-    return res.json({ token });
+    try {
+      const user = await User.findOne({ where: { id: req.user.id } });
+      if (!user) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+      const token = generateJwt(req.user.id, req.user.role);
+      return res.json({ token, user });
+    } catch (error) {
+      console.error('Error during token validation:', error.message);
+      res.status(500).json({ message: 'Internal server error' });
+    }
   }
 
   async delete(req, res, next) {
@@ -162,18 +159,13 @@ class UserController {
         }
       );
 
-      // Генерация нового JWT с обновленной ссылкой на аватар
+      // User с обновленной ссылкой на аватар
       const updatedUser = await User.findOne({
         where: { id: userData.id },
       });
-      const token = generateJwt(
-        updatedUser.id,
-        updatedUser.name,
-        updatedUser.email,
-        updatedUser.role,
-        updatedUser.photo
-      );
-      return res.json({ token });
+      // Убираем пароль из объекта юзера для хранения на клиенте и преобразуем объект Sequelize в простой объект
+      const { password, ...safeUser } = updatedUser.toJSON();
+      return res.json({ user: safeUser });
     } catch (error) {
       console.error('Error uploading avatar:', error);
       return res.status(500).json({ message: 'Error uploading avatar' });
@@ -193,15 +185,7 @@ class UserController {
         return res.status(404).json({ message: 'User not found' });
       }
       if (!user.photo) {
-        return res.json({
-          token: generateJwt(
-            user.id,
-            user.name,
-            user.email,
-            user.role,
-            user.photo
-          ),
-        });
+        return user;
       }
       const publicId = `user-avatars/${user.photo
         .split('/')
@@ -221,16 +205,11 @@ class UserController {
         }
       );
 
-      // Генерация нового JWT токена без ссылки на аватар
+      // User без ссылки на аватар
       const updatedUser = await User.findOne({ where: { id: userData.id } });
-      const token = generateJwt(
-        updatedUser.id,
-        updatedUser.name,
-        updatedUser.email,
-        updatedUser.role,
-        updatedUser.photo
-      );
-      return res.json({ token });
+      // Убираем пароль из объекта юзера для хранения на клиенте и преобразуем объект Sequelize в простой объект
+      const { password, ...safeUser } = updatedUser.toJSON();
+      return res.json({ user: safeUser });
     } catch (error) {
       console.error('Error deleting user avatar:', error);
       return res.status(500).json({ message: 'Error deleting user avatar' });
