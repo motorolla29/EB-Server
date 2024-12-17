@@ -1,6 +1,11 @@
 const sequelize = require('../db');
 const DataTypes = require('sequelize');
 
+const Token = sequelize.define('token', {
+  user: { type: DataTypes.INTEGER, primaryKey: true },
+  refreshToken: { type: DataTypes.STRING, allowNull: false },
+});
+
 const User = sequelize.define('user', {
   id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
   name: { type: DataTypes.STRING },
@@ -8,6 +13,8 @@ const User = sequelize.define('user', {
   password: { type: DataTypes.STRING },
   role: { type: DataTypes.STRING, defaultValue: 'USER' },
   photo: { type: DataTypes.STRING },
+  isActivated: { type: DataTypes.BOOLEAN, defaultValue: false },
+  activationLink: { type: DataTypes.STRING },
 });
 
 const Basket = sequelize.define('basket', {
@@ -75,6 +82,7 @@ LovelistProduct.belongsTo(Lovelist);
 Category.hasMany(Product);
 
 module.exports = {
+  Token,
   User,
   Basket,
   Lovelist,

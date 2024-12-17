@@ -1,11 +1,16 @@
 class ApiError extends Error {
-  constructor(status, message) {
+  constructor(status, message, errors) {
     super();
     this.status = status;
+    this.errors = errors;
     this.message = message;
   }
 
-  static badRequest(message) {
+  static badRequest(message, errors = {}) {
+    return new ApiError(400, message, errors);
+  }
+
+  static notFound(message) {
     return new ApiError(404, message);
   }
 
