@@ -1,4 +1,5 @@
 const jwt = require('jsonwebtoken');
+const ApiError = require('../error/ApiError');
 
 module.exports = function (role) {
   return function (req, res, next) {
@@ -8,16 +9,31 @@ module.exports = function (role) {
     try {
       const token = req.headers.authorization.split(' ')[1]; // Bearer asfasnfkajsfnjk
       if (!token) {
-        return res.status(401).json({ message: 'Not authorized' });
+        return next(
+          ApiError.unauthorizedError('Authorization token is missing')
+        );
       }
+
       const decoded = jwt.verify(token, process.env.SECRET_KEY);
+
+      if (!decoded) {
+        return next(
+          ApiError.forbidden('Access denied: insufficient permissions')
+        );
+      }
+
       if (decoded.role !== role) {
         return res.status(403).json({ message: 'No access' });
       }
       req.user = decoded;
       next();
     } catch (e) {
-      res.status(401).json({ message: 'Not authorized' });
+      console.error('Error in role-check middleware:', e.message || e);
+      return next(
+        ApiError.unauthorizedError(
+          'An error occurred while verifying the token'
+        )
+      );
     }
   };
 };

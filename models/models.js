@@ -2,8 +2,11 @@ const sequelize = require('../db');
 const DataTypes = require('sequelize');
 
 const Token = sequelize.define('token', {
-  user: { type: DataTypes.INTEGER, primaryKey: true },
+  id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
   refreshToken: { type: DataTypes.STRING, allowNull: false },
+  userId: { type: DataTypes.INTEGER, allowNull: false },
+  deviceId: { type: DataTypes.STRING },
+  ipAddress: { type: DataTypes.STRING },
 });
 
 const User = sequelize.define('user', {
@@ -66,6 +69,14 @@ const Category = sequelize.define('category', {
   id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
   name: { type: DataTypes.STRING, unique: true, allowNull: false },
 });
+
+User.hasMany(Token, {
+  as: 'tokens',
+  foreignKey: 'userId',
+  onDelete: 'CASCADE',
+});
+
+Token.belongsTo(User, { foreignKey: 'userId' });
 
 User.hasOne(Basket, { onDelete: 'CASCADE' });
 Basket.belongsTo(User);

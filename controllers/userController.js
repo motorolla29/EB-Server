@@ -10,13 +10,15 @@ const ApiError = require('../error/ApiError');
 const mailService = require('../services/mail-service');
 const tokenService = require('../services/token-service');
 const { validationResult } = require('express-validator');
+const UserDto = require('../dtos/UserDto');
 
 class UserController {
   async registration(req, res, next) {
     try {
       const errors = validationResult(req);
 
-      const { name, email, password, role } = req.body;
+      const { name, email, password, deviceId, role } = req.body;
+      const ipAddress = req.ip || req.connection.remoteAddress;
 
       if (!errors.isEmpty()) {
         const validationErrors = errors.array().reduce((acc, error) => {
@@ -63,32 +65,38 @@ class UserController {
         );
       }
 
-      const tokens = tokenService.generateJwt({ id: user.id, role: user.role });
-      await tokenService.saveToken(user.id, tokens.refreshToken);
-
       await Basket.create({ id: user.id, userId: user.id });
       await Lovelist.create({ id: user.id, userId: user.id });
 
-      // Убираем пароль из объекта юзера для хранения на клиенте и преобразуем объект Sequelize в простой объект
-      const { password: _, ...safeUser } = user.toJSON();
+      const userDto = new UserDto(user);
+
+      const tokens = tokenService.generateJwt({ id: user.id, role: user.role });
+      await tokenService.saveToken(
+        user.id,
+        tokens.refreshToken,
+        deviceId,
+        ipAddress
+      );
 
       res.cookie('refreshToken', tokens.refreshToken, {
         maxAge: 30 * 24 * 60 * 60 * 1000,
         httpOnly: true,
+        sameSite: 'None',
+        secure: true,
       });
 
-      return res.json({ ...tokens, user: safeUser });
+      return res.json({ ...tokens, user: userDto });
     } catch (error) {
       console.error('Server Error:', error.message);
 
       // Обработка ошибок Sequelize (например, валидация или база данных)
       if (error.name === 'SequelizeValidationError') {
         // Отправляем ошибку через middleware с кодом 400
-        return next(ApiError.badRequest('Sequelize Validation Error'));
+        return next(ApiError.badRequest('Validation Error'));
       }
       if (error.name === 'SequelizeDatabaseError') {
         // Отправляем ошибку через middleware с кодом 500
-        return next(ApiError.internal('Sequelize Database Error'));
+        return next(ApiError.internal('Database Error'));
       }
 
       // Для других ошибок отправляем их через middleware с кодом 500
@@ -97,28 +105,67 @@ class UserController {
   }
 
   async login(req, res, next) {
-    const { email, password } = req.body;
+    const { email, password, deviceId } = req.body;
+    const ipAddress = req.ip || req.connection.remoteAddress;
+
     const user = await User.findOne({ where: { email: email.toLowerCase() } });
     if (!user) {
       return next(
-        ApiError.internal({ email: 'User with such email not found' })
+        ApiError.badRequest('User with such email not found', {
+          email: 'User with such email not found',
+        })
       );
     }
     let comparePassword = bcrypt.compareSync(password, user.password);
     if (!comparePassword) {
-      return next(ApiError.internal({ password: 'Incorrect password' }));
+      return next(
+        ApiError.badRequest('Incorrect password', {
+          password: 'Incorrect password',
+        })
+      );
     }
-    const token = generateJwt(user.id, user.role);
 
-    // Убираем пароль из объекта юзера для хранения на клиенте и преобразуем объект Sequelize в простой объект
-    const { password: _, ...safeUser } = user.toJSON();
+    const userDto = new UserDto(user);
 
-    return res.json({ token, user: safeUser });
+    const tokens = tokenService.generateJwt({ id: user.id, role: user.role });
+    await tokenService.saveToken(
+      user.id,
+      tokens.refreshToken,
+      deviceId,
+      ipAddress
+    );
+
+    res.cookie('refreshToken', tokens.refreshToken, {
+      maxAge: 30 * 24 * 60 * 60 * 1000,
+      httpOnly: true,
+      sameSite: 'None',
+      secure: true,
+    });
+
+    return res.json({ ...tokens, user: userDto });
   }
 
   async logout(req, res, next) {
     try {
-    } catch (err) {}
+      const { refreshToken } = req.cookies;
+
+      if (!refreshToken) {
+        return next(ApiError.badRequest('No refresh token provided'));
+      }
+
+      const token = await tokenService.deleteToken(refreshToken);
+
+      if (!token) {
+        return next(ApiError.notFound('Token not found or already deleted'));
+      }
+
+      res.clearCookie('refreshToken');
+
+      return res.json({ message: 'Logged out successfully' });
+    } catch (err) {
+      console.error('Error during logout:', err.message);
+      return next(ApiError.internal('Failed to log out'));
+    }
   }
 
   async activate(req, res, next) {
@@ -141,24 +188,55 @@ class UserController {
 
   async refresh(req, res, next) {
     try {
-    } catch (err) {}
-  }
+      const { refreshToken } = req.cookies;
 
-  async check(req, res, next) {
-    try {
-      const user = await User.findOne({ where: { id: req.user.id } });
-      if (!user) {
-        return res.status(404).json({ message: 'User not found' });
+      if (!refreshToken) {
+        return next(
+          ApiError.unauthorizedError('Refresh token is missing in cookies')
+        );
       }
-      const token = generateJwt(req.user.id, req.user.role);
+      const userData = tokenService.validateRefreshToken(refreshToken);
+      if (!userData) {
+        return next(ApiError.unauthorizedError('Invalid refresh token'));
+      }
+      const tokenFromDB = tokenService.findToken(refreshToken);
+      if (!tokenFromDB) {
+        throw ApiError.unauthorizedError('Refresh token not found in database');
+      }
+      const user = await User.findOne({ where: { id: userData.id } });
 
-      // Убираем пароль из объекта юзера для хранения на клиенте и преобразуем объект Sequelize в простой объект
-      const { password: _, ...safeUser } = user.toJSON();
+      if (!user) {
+        throw ApiError.unauthorizedError('User not found');
+      }
 
-      return res.json({ token, user: safeUser });
-    } catch (error) {
-      console.error('Error during token validation:', error.message);
-      return next(ApiError.internal('Internal server error'));
+      const userDto = new UserDto(user);
+
+      const deviceId =
+        req.headers['deviceId'] || req.headers['deviceid'] || 'unknown_device';
+      const ipAddress =
+        req.ip ||
+        req.headers['x-forwarded-for'] ||
+        req.connection.remoteAddress;
+
+      const tokens = tokenService.generateJwt({ id: user.id, role: user.role });
+      await tokenService.saveToken(
+        user.id,
+        tokens.refreshToken,
+        deviceId,
+        ipAddress
+      );
+
+      res.cookie('refreshToken', tokens.refreshToken, {
+        maxAge: 30 * 24 * 60 * 60 * 1000,
+        httpOnly: true,
+        sameSite: 'None',
+        secure: true,
+      });
+
+      return res.json({ ...tokens, user: userDto });
+    } catch (err) {
+      console.error(err);
+      next(err);
     }
   }
 
@@ -186,7 +264,6 @@ class UserController {
       }
 
       const { photo } = req.files; // Получаем файл из запроса
-      //console.log(req.files);
       if (!photo) {
         return next(ApiError.badRequest('No photo file provided'));
       }
@@ -248,9 +325,9 @@ class UserController {
       const updatedUser = await User.findOne({
         where: { id: userData.id },
       });
-      // Убираем пароль из объекта юзера для хранения на клиенте и преобразуем объект Sequelize в простой объект
-      const { password: _, ...safeUser } = updatedUser.toJSON();
-      return res.json({ user: safeUser });
+
+      const updatedUserDto = new UserDto(updatedUser);
+      return res.json({ user: updatedUserDto });
     } catch (error) {
       console.error('Error uploading avatar:', error.message);
       return next(ApiError.internal('Error uploading avatar'));
@@ -292,9 +369,8 @@ class UserController {
 
       // User без ссылки на аватар
       const updatedUser = await User.findOne({ where: { id: userData.id } });
-      // Убираем пароль из объекта юзера для хранения на клиенте и преобразуем объект Sequelize в простой объект
-      const { password: _, ...safeUser } = updatedUser.toJSON();
-      return res.json({ user: safeUser });
+      const updatedUserDto = new UserDto(updatedUser);
+      return res.json({ user: updatedUserDto });
     } catch (error) {
       console.error('Error deleting user avatar:', error.message);
       return next(ApiError.internal('Error deleting user avatar'));

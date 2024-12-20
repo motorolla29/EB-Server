@@ -1,4 +1,5 @@
-const jwt = require('jsonwebtoken');
+const ApiError = require('../error/ApiError');
+const tokenService = require('../services/token-service');
 
 module.exports = function (req, res, next) {
   if (req.method === 'OPTIONS') {
@@ -7,12 +8,18 @@ module.exports = function (req, res, next) {
   try {
     const token = req.headers.authorization.split(' ')[1]; // Bearer asfasnfkajsfnjk
     if (!token) {
-      return res.status(401).json({ message: 'Not authorized' });
+      return next(ApiError.unauthorizedError('Authorization token missing'));
     }
-    const decoded = jwt.verify(token, process.env.SECRET_KEY);
+
+    const decoded = tokenService.validateAccessToken(token);
+    if (!decoded) {
+      return next(ApiError.unauthorizedError('Invalid access token'));
+    }
     req.user = decoded;
     next();
   } catch (e) {
-    res.status(401).json({ message: 'Not authorized' });
+    return next(
+      ApiError.unauthorizedError('An error occurred while validating the token')
+    );
   }
 };
