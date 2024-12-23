@@ -376,6 +376,57 @@ class UserController {
       return next(ApiError.internal('Error deleting user avatar'));
     }
   }
+
+  async activationLinkResend(req, res, next) {
+    try {
+      const { email } = req.body;
+
+      if (!email) {
+        return next(
+          ApiError.badRequest('Email is required for resending activation link')
+        );
+      }
+
+      const user = await User.findOne({
+        where: { email: email.toLowerCase() },
+      });
+      if (!user) {
+        return next(ApiError.badRequest('No user found with this email'));
+      }
+
+      if (user.isActivated) {
+        return next(ApiError.badRequest('This email is already activated'));
+      }
+
+      // Генерация новой ссылки (или использование старой)
+      let activationLink = user.activationLink;
+      if (!activationLink) {
+        activationLink = uuid.v4();
+        await user.update({ activationLink });
+      }
+
+      // Попытка отправки письма активации
+      try {
+        await mailService.sendActivationLink(
+          email,
+          `${process.env.API_URL}/api/user/activate/${activationLink}`
+        );
+      } catch (mailError) {
+        console.error('Error sending activation email:', mailError.message);
+        return next(
+          ApiError.internal(
+            'Failed to send activation email. Please try again later.'
+          )
+        );
+      }
+      return res.json({
+        message: 'Activation email has been resent successfully',
+      });
+    } catch {
+      console.error('Server Error:', error.message);
+      return next(ApiError.internal('Unexpected server error occurred'));
+    }
+  }
 }
 
 module.exports = new UserController();

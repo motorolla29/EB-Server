@@ -14,6 +14,7 @@ router.post(
 router.post('/login', userController.login);
 router.post('/logout', userController.logout);
 router.get('/activate/:link', userController.activate);
+router.post('/resend-activation', userController.activationLinkResend);
 router.get('/refresh', userController.refresh);
 router.get('/delete', authMiddleware, userController.delete);
 router.post('/avatar/set', authMiddleware, userController.setAvatar);
