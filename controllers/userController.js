@@ -11,6 +11,7 @@ const mailService = require('../services/mail-service');
 const tokenService = require('../services/token-service');
 const { validationResult } = require('express-validator');
 const UserDto = require('../dtos/UserDto');
+const { Op } = require('sequelize');
 
 class UserController {
   async registration(req, res, next) {
@@ -425,6 +426,117 @@ class UserController {
     } catch {
       console.error('Server Error:', error.message);
       return next(ApiError.internal('Unexpected server error occurred'));
+    }
+  }
+
+  async updatePersonalData(req, res, next) {
+    try {
+      const userData = req.user;
+      if (!userData) {
+        return next(ApiError.notFound('User with this ID not found'));
+      }
+      const user = await User.findOne({
+        where: { id: userData.id },
+      });
+      if (!user) {
+        return next(ApiError.notFound('User with this ID not found'));
+      }
+      const { name, surname, patronymic, dateOfBirth, gender } = req.body;
+      await user.update({
+        name: name || user.name,
+        surname: surname || user.surname,
+        patronymic: patronymic || user.patronymic,
+        dateOfBirth: dateOfBirth || user.dateOfBirth,
+        gender: gender || user.gender,
+      });
+      const updatedUser = await User.findOne({
+        where: { id: userData.id },
+      });
+
+      const updatedUserDto = new UserDto(updatedUser);
+      return res.json({ user: updatedUserDto });
+    } catch (error) {
+      console.error(error);
+      return next(ApiError.internal('Failed to update user data'));
+    }
+  }
+
+  async updateContactData(req, res, next) {
+    try {
+      const userData = req.user;
+
+      if (!userData) {
+        return next(ApiError.notFound('User with this ID not found'));
+      }
+
+      const user = await User.findOne({
+        where: { id: userData.id },
+      });
+
+      if (!user) {
+        return next(ApiError.notFound('User with this ID not found'));
+      }
+
+      const { email, phone } = req.body;
+
+      const validationErrors = {};
+
+      // Проверяем, изменился ли email
+      if (email && email !== user.email) {
+        user.isActivated = false; // Если email изменился, сбрасываем активацию
+        user.activationLink = uuid.v4(); // Генерируем новый activationLink
+      }
+
+      // Проверяем существование других пользователей с таким же email
+      if (email) {
+        const emailExists = await User.findOne({
+          where: {
+            email,
+            id: { [Op.ne]: userData.id }, // Исключаем текущего пользователя
+          },
+        });
+        if (emailExists) {
+          validationErrors.email = 'A user with this email already exists';
+        }
+      }
+
+      // Проверяем существование других пользователей с таким же телефоном
+      if (phone) {
+        const phoneExists = await User.findOne({
+          where: {
+            phone,
+            id: { [Op.ne]: userData.id }, // Исключаем текущего пользователя
+          },
+        });
+        if (phoneExists) {
+          validationErrors.phone =
+            'A user with this phone number already exists';
+        }
+      }
+
+      // Если есть ошибки, возвращаем их
+      if (Object.keys(validationErrors).length > 0) {
+        return next(ApiError.badRequest('Validation error', validationErrors));
+      }
+
+      // Обновляем контактные данные
+      await user.update({
+        email: email || user.email,
+        phone: phone || user.phone,
+        isActivated: user.isActivated,
+        activationLink: user.activationLink,
+      });
+
+      const updatedUser = await User.findOne({
+        where: { id: userData.id },
+      });
+
+      const updatedUserDto = new UserDto(updatedUser);
+
+      return res.json({ user: updatedUserDto });
+    } catch (error) {
+      console.error(error);
+      return next(ApiError.internal('Failed to update contact data'));
     }
   }
 }

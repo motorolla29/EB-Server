@@ -12,7 +12,12 @@ const Token = sequelize.define('token', {
 const User = sequelize.define('user', {
   id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
   name: { type: DataTypes.STRING },
+  surname: { type: DataTypes.STRING },
+  patronymic: { type: DataTypes.STRING },
+  dateOfBirth: { type: DataTypes.DATE },
+  gender: { type: DataTypes.STRING },
   email: { type: DataTypes.STRING, unique: true },
+  phone: { type: DataTypes.STRING },
   password: { type: DataTypes.STRING },
   role: { type: DataTypes.STRING, defaultValue: 'USER' },
   photo: { type: DataTypes.STRING },

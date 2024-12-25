@@ -6,7 +6,7 @@ const { body } = require('express-validator');
 
 router.post(
   '/registration',
-  body('name').isLength({ min: 2 }),
+  body('name').isLength({ min: 2, max: 32 }),
   body('email').isEmail(),
   body('password').isLength({ min: 6, max: 32 }),
   userController.registration
@@ -19,5 +19,15 @@ router.get('/refresh', userController.refresh);
 router.get('/delete', authMiddleware, userController.delete);
 router.post('/avatar/set', authMiddleware, userController.setAvatar);
 router.post('/avatar/delete', authMiddleware, userController.deleteAvatar);
+router.post(
+  '/update-personal-data',
+  authMiddleware,
+  userController.updatePersonalData
+);
+router.post(
+  '/update-contact-data',
+  authMiddleware,
+  userController.updateContactData
+);
 
 module.exports = router;
