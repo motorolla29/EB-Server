@@ -446,7 +446,9 @@ class UserController {
         name: name || user.name,
         surname: surname || user.surname,
         patronymic: patronymic || user.patronymic,
-        dateOfBirth: dateOfBirth || user.dateOfBirth,
+        dateOfBirth: dateOfBirth.length
+          ? dateOfBirth || user.dateOfBirth
+          : null,
         gender: gender || user.gender,
       });
       const updatedUser = await User.findOne({
