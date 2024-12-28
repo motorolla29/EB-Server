@@ -442,11 +442,15 @@ class UserController {
         return next(ApiError.notFound('User with this ID not found'));
       }
       const { name, surname, patronymic, dateOfBirth, gender } = req.body;
+
+      const parsedDateOfBirth =
+        dateOfBirth && !isNaN(Date.parse(dateOfBirth)) ? dateOfBirth : null;
+
       await user.update({
         name: name || user.name,
         surname: surname,
         patronymic: patronymic,
-        dateOfBirth: dateOfBirth,
+        dateOfBirth: parsedDateOfBirth,
         gender: gender || user.gender,
       });
       const updatedUser = await User.findOne({
