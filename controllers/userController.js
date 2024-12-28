@@ -444,9 +444,9 @@ class UserController {
       const { name, surname, patronymic, dateOfBirth, gender } = req.body;
       await user.update({
         name: name || user.name,
-        surname: surname || user.surname,
-        patronymic: patronymic || user.patronymic,
-        dateOfBirth: dateOfBirth || user.dateOfBirth,
+        surname: surname,
+        patronymic: patronymic,
+        dateOfBirth: dateOfBirth,
         gender: gender || user.gender,
       });
       const updatedUser = await User.findOne({
