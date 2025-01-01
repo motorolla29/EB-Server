@@ -19,7 +19,15 @@ class UserController {
       const errors = validationResult(req);
 
       const { name, email, password, deviceId, role } = req.body;
-      const ipAddress = req.ip || req.connection.remoteAddress;
+      //const ipAddress = req.ip || req.connection.remoteAddress;
+      // Получаем реальный IP-адрес, проверяя заголовки X-Forwarded-For или X-Real-IP
+      const ipAddress =
+        req.headers['x-forwarded-for'] ||
+        req.headers['x-real-ip'] ||
+        req.connection.remoteAddress;
+
+      // Если несколько IP-адресов, берем первый (реальный клиентский IP)
+      const ip = ipAddress.split(',')[0] || 'Unknown IP';
 
       if (!errors.isEmpty()) {
         const validationErrors = errors.array().reduce((acc, error) => {
@@ -72,12 +80,7 @@ class UserController {
       const userDto = new UserDto(user);
 
       const tokens = tokenService.generateJwt({ id: user.id, role: user.role });
-      await tokenService.saveToken(
-        user.id,
-        tokens.refreshToken,
-        deviceId,
-        ipAddress
-      );
+      await tokenService.saveToken(user.id, tokens.refreshToken, deviceId, ip);
 
       res.cookie('refreshToken', tokens.refreshToken, {
         maxAge: 30 * 24 * 60 * 60 * 1000,
@@ -107,7 +110,15 @@ class UserController {
 
   async login(req, res, next) {
     const { email, password, deviceId } = req.body;
-    const ipAddress = req.ip || req.connection.remoteAddress;
+    //const ipAddress = req.ip || req.connection.remoteAddress;
+    // Получаем реальный IP-адрес, проверяя заголовки X-Forwarded-For или X-Real-IP
+    const ipAddress =
+      req.headers['x-forwarded-for'] ||
+      req.headers['x-real-ip'] ||
+      req.connection.remoteAddress;
+
+    // Если несколько IP-адресов, берем первый (реальный клиентский IP)
+    const ip = ipAddress.split(',')[0] || 'Unknown IP';
 
     const user = await User.findOne({ where: { email: email.toLowerCase() } });
     if (!user) {
@@ -129,12 +140,7 @@ class UserController {
     const userDto = new UserDto(user);
 
     const tokens = tokenService.generateJwt({ id: user.id, role: user.role });
-    await tokenService.saveToken(
-      user.id,
-      tokens.refreshToken,
-      deviceId,
-      ipAddress
-    );
+    await tokenService.saveToken(user.id, tokens.refreshToken, deviceId, ip);
 
     res.cookie('refreshToken', tokens.refreshToken, {
       maxAge: 30 * 24 * 60 * 60 * 1000,
@@ -214,18 +220,19 @@ class UserController {
 
       const deviceId =
         req.headers['deviceId'] || req.headers['deviceid'] || 'unknown_device';
+      // const ipAddress =
+      //   req.ip ||
+      //   req.headers['x-forwarded-for'] ||
+      //   req.connection.remoteAddress;
       const ipAddress =
-        req.ip ||
         req.headers['x-forwarded-for'] ||
+        req.headers['x-real-ip'] ||
         req.connection.remoteAddress;
 
+      const ip = ipAddress.split(',')[0] || 'Unknown IP';
+
       const tokens = tokenService.generateJwt({ id: user.id, role: user.role });
-      await tokenService.saveToken(
-        user.id,
-        tokens.refreshToken,
-        deviceId,
-        ipAddress
-      );
+      await tokenService.saveToken(user.id, tokens.refreshToken, deviceId, ip);
 
       res.cookie('refreshToken', tokens.refreshToken, {
         maxAge: 30 * 24 * 60 * 60 * 1000,
