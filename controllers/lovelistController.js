@@ -1,4 +1,4 @@
-const { LovelistProduct, Lovelist } = require('../models/models');
+const { LovelistProduct } = require('../models/models');
 
 class LovelistController {
   async getLovelist(req, res) {

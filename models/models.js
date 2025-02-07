@@ -75,6 +75,34 @@ const Category = sequelize.define('category', {
   name: { type: DataTypes.STRING, unique: true, allowNull: false },
 });
 
+const Order = sequelize.define('order', {
+  id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
+  userId: { type: DataTypes.INTEGER, allowNull: true },
+  items: { type: DataTypes.JSON, allowNull: false },
+  total: { type: DataTypes.DECIMAL(100, 2) },
+  currency: { type: DataTypes.STRING },
+  originalTotal: { type: DataTypes.DECIMAL(100, 2) },
+  originalCurrency: { type: DataTypes.STRING },
+  paymentProviderName: { type: DataTypes.STRING },
+  status: {
+    type: DataTypes.STRING,
+    allowNull: false,
+    defaultValue: 'pending',
+  },
+  paymentId: { type: DataTypes.STRING, allowNull: true },
+  confirmationUrl: { type: DataTypes.STRING, allowNull: true },
+  country: { type: DataTypes.STRING },
+  city: { type: DataTypes.STRING },
+  postalCode: { type: DataTypes.STRING },
+  address: { type: DataTypes.STRING },
+  apartment: { type: DataTypes.STRING },
+  company: { type: DataTypes.STRING },
+  name: { type: DataTypes.STRING },
+  surname: { type: DataTypes.STRING },
+  phoneNumber: { type: DataTypes.STRING },
+  email: { type: DataTypes.STRING },
+});
+
 User.hasMany(Token, {
   as: 'tokens',
   foreignKey: 'userId',
@@ -106,4 +134,5 @@ module.exports = {
   LovelistProduct,
   Product,
   Category,
+  Order,
 };
