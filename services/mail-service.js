@@ -43,8 +43,6 @@ class MailService {
     const { email } = order;
     if (!email) return;
 
-    console.log('send');
-
     const expectedDeliveryDate = dayjs(order.createdAt)
       .add(10, 'day')
       .toISOString();
@@ -53,16 +51,16 @@ class MailService {
       .map(
         (item) =>
           `<tr>
-            <td style="padding: 20px 0; border-bottom: 1px solid #ddd; display: flex; align-items: flex-start; gap: 10px;">
+            <td style="padding: 20px 0; border-bottom: 1px solid #ddd; display: flex; align-items: flex-start;">
               <img src="https://ik.imagekit.io/motorolla29/exotic-beds/catalog/${item.photo}?tr=w-50" alt="product_photo" style="width: 50px; height: 50px; border-radius: 5px; object-fit: cover;">
-              <span style="font-size: 14px; color: #004757; padding-left: 5px;">
+              <span style="font-size: 14px; color: #004757; padding-left: 10px;">
                 ${item.title}
               </span>
             </td>
-            <td style="padding: 20px 40px; border-bottom: 1px solid #ddd; text-align: center; vertical-align: top; font-size: 14px; color: #004757;">
+            <td style="padding: 20px 10px 20px 10px; border-bottom: 1px solid #ddd; text-align: center; vertical-align: top; font-size: 14px; color: #004757;">
               ${item.quantity}
             </td>
-            <td style="padding: 20px 0; border-bottom: 1px solid #ddd; text-align: right; vertical-align: top; font-size: 14px; color: #004757; text-wrap: nowrap">
+            <td style="padding: 20px 0 0 10px; border-bottom: 1px solid #ddd; text-align: right; vertical-align: top; font-size: 14px; color: #004757; white-space: nowrap">
               ${item.price} EUR
             </td>
           </tr>`
@@ -81,7 +79,7 @@ class MailService {
     <p style="font-size: 16px; text-align: center; color: #4F4A57; margin: 0;">
       Name: ${order.name} ${order.surname || ''} <br>
       ${order.company ? `Company: ${order.company} <br>` : ''}
-      ${order.phone && (order.phone.length > 1) & `Phone: ${order.phone}`}
+      ${order.phone && order.phone.length > 1 ? `Phone: ${order.phone}` : ''}
     </p>`;
 
     await this.transporter.sendMail({
@@ -98,8 +96,7 @@ class MailService {
             <img src="https://ik.imagekit.io/motorolla29/exotic-beds/logo/EB-LOGO-HD.png?tr=w-500" alt="Exotic Beds Logo" style="max-width: 150px;">
           </div>
           <h1 style="color: #004757; font-size: 28px; text-align: center; font-weight: 400;">Thank You for Your Order!</h1>
-          <p style="font-size: 16px; text-align: center; color: #4F4A57;">Your order <strong>${order.id}</strong> has been successfully placed.</p>
-
+          <p style="font-size: 16px; text-align: center; color: #4F4A57;">Your order <strong>№${order.id}</strong> has been successfully placed.</p>
           <h2 style="color: #004757; font-size: 22px; text-align: center; font-weight: 400;">Order Summary</h2>
           <table style="width: 100%; border-collapse: collapse; margin-top: 10px; margin-bottom: 40px;">
             <thead>
@@ -115,7 +112,7 @@ class MailService {
             <tfoot>
               <tr>
                 <td colspan="2" style="padding: 20px; text-align: right;">Total:</td>
-                <td style="font-size: 16px; padding: 10px 0; text-align: right; text-wrap: nowrap;">${order.originalTotal} ${order.originalCurrency}</td>
+                <td style="font-size: 16px; padding: 20px 0 20px 20px; text-align: right; white-space: nowrap;">${order.originalTotal} ${order.originalCurrency}</td>
               </tr>
             </tfoot>
           </table>
