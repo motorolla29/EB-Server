@@ -122,11 +122,9 @@ class MailService {
             <tfoot style="border-bottom: 1px solid #004757a0">
               <tr>
                 <td colspan="2" style="padding: 5px 0 5px 20px; text-align: right;  color: #4F4A57;">Shipping cost:</td>
-                <td style="font-size: 14px; padding: 5px 0 5px 10px; text-align: right; white-space: nowrap; color: #4F4A57;">${
-                  typeof order.shippingCost === 'number'
-                    ? `${order.shippingCost} EUR`
-                    : order.shippingCost
-                }</td>
+                <td style="font-size: 14px; padding: 5px 0 5px 10px; text-align: right; white-space: nowrap; color: #4F4A57;">
+                  ${order.shippingCost} EUR
+                </td>
               </tr>
               ${
                 order.promocode &&
