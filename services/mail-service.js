@@ -52,7 +52,9 @@ class MailService {
         (item) =>
           `<tr style="border-bottom: 1px solid #0047572e">
             <td style="padding: 20px 0; display: flex; align-items: flex-start;">
-              <img src="https://ik.imagekit.io/motorolla29/exotic-beds/catalog/${item.photo}?tr=w-150" alt="product_photo" style="width: 50px; height: 50px; border-radius: 5px; object-fit: cover;">
+              <img src="https://ik.imagekit.io/motorolla29/exotic-beds/catalog/${
+                item.photo
+              }?tr=w-150" alt="product_photo" style="width: 50px; height: 50px; border-radius: 5px; object-fit: cover;">
               <span style="font-size: 14px; color: #004757; padding-left: 10px;">
                 ${item.title}
               </span>
@@ -61,7 +63,7 @@ class MailService {
               ${item.quantity}
             </td>
             <td style="padding: 20px 0 0 10px; text-align: right; vertical-align: top; font-size: 14px; color: #004757; white-space: nowrap">
-              ${item.price} EUR
+              ${item.sale || item.price} EUR
             </td>
           </tr>`
       )
@@ -102,7 +104,9 @@ class MailService {
             <img src="https://ik.imagekit.io/motorolla29/exotic-beds/logo/EB-LOGO-HD.png?tr=w-500" alt="Exotic Beds Logo" style="max-width: 150px;">
           </div>
           <h1 style="color: #004757; font-size: 28px; text-align: center; font-weight: 400;">Thank You for Your Order!</h1>
-          <p style="font-size: 16px; text-align: center; color: #4F4A57;">Your order <strong>№${order.id}</strong> has been successfully placed.</p>
+          <p style="font-size: 16px; text-align: center; color: #4F4A57;">Your order <strong>№${
+            order.id
+          }</strong> has been successfully placed.</p>
           <h2 style="color: #004757; font-size: 22px; text-align: center; font-weight: 400;">Order Summary</h2>
           <table style="width: 100%; border-collapse: collapse; margin-top: 10px; margin-bottom: 40px;">
             <thead>
@@ -117,8 +121,36 @@ class MailService {
             </tbody>
             <tfoot style="border-bottom: 1px solid #004757a0">
               <tr>
+                <td colspan="2" style="padding: 5px 0 5px 20px; text-align: right;  color: #4F4A57;">Shipping cost:</td>
+                <td style="font-size: 14px; padding: 5px 0 5px 10px; text-align: right; white-space: nowrap; color: #4F4A57;">${
+                  typeof order.shippingCost === 'number'
+                    ? `${order.shippingCost} EUR`
+                    : order.shippingCost
+                }</td>
+              </tr>
+              ${
+                order.promocode &&
+                order.promocodeDiscountTotal &&
+                order.promocodeDiscountPercent && (
+                  <tr>
+                    <td
+                      colspan="2"
+                      style="padding: 5px 0 5px 20px; text-align: right;  color: #4F4A57;"
+                    >
+                      Promocode - {order.promocode} (-
+                      {order.promocodeDiscountPercent}%):
+                    </td>
+                    <td style="font-size: 14px; padding: 5px 0 5px 10px; text-align: right; white-space: nowrap; color: #4F4A57">
+                      -{order.promocodeDiscountTotal} EUR
+                    </td>
+                  </tr>
+                )
+              }
+              <tr>
                 <td colspan="2" style="font-size: 16px; padding: 20px; text-align: right;">Total:</td>
-                <td style="font-size: 16px; padding: 20px 0 20px 20px; text-align: right; white-space: nowrap;">${order.originalTotal} ${order.originalCurrency}</td>
+                <td style="font-size: 16px; padding: 20px 0 20px 20px; text-align: right; white-space: nowrap;">${
+                  order.originalTotal
+                } ${order.originalCurrency}</td>
               </tr>
             </tfoot>
           </table>
