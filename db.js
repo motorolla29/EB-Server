@@ -17,7 +17,12 @@ module.exports = new Sequelize(
       acquire: 30000, // Максимальное время (в миллисекундах) ожидания перед таймаутом
     },
     dialectModule: pg,
-    dialectOptions: {},
+    dialectOptions: {
+      ssl: {
+        require: true, // Необходимость SSL-соединения
+        rejectUnauthorized: false, // Для Neon отключаем проверку сертификатов
+      },
+    },
     logging: false, // Отключить SQL-логирование для повышения читаемости консоли
   }
 );
