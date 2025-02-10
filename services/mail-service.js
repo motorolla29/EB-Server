@@ -45,14 +45,14 @@ class MailService {
 
     const expectedDeliveryDate = dayjs(order.createdAt)
       .add(10, 'day')
-      .toISOString();
+      .format('DD MMMM YYYY');
 
     const itemsList = JSON.parse(order.items)
       .map(
         (item) =>
           `<tr>
             <td style="padding: 20px 0; border-bottom: 1px solid #ddd; display: flex; align-items: flex-start;">
-              <img src="https://ik.imagekit.io/motorolla29/exotic-beds/catalog/${item.photo}?tr=w-50" alt="product_photo" style="width: 50px; height: 50px; border-radius: 5px; object-fit: cover;">
+              <img src="https://ik.imagekit.io/motorolla29/exotic-beds/catalog/${item.photo}?tr=w-150" alt="product_photo" style="width: 50px; height: 50px; border-radius: 5px; object-fit: cover;">
               <span style="font-size: 14px; color: #004757; padding-left: 10px;">
                 ${item.title}
               </span>
@@ -111,7 +111,7 @@ class MailService {
             </tbody>
             <tfoot>
               <tr>
-                <td colspan="2" style="padding: 20px; text-align: right;">Total:</td>
+                <td colspan="2" style="font-size: 16px; padding: 20px; text-align: right;">Total:</td>
                 <td style="font-size: 16px; padding: 20px 0 20px 20px; text-align: right; white-space: nowrap;">${order.originalTotal} ${order.originalCurrency}</td>
               </tr>
             </tfoot>
