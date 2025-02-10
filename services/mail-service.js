@@ -50,17 +50,17 @@ class MailService {
     const itemsList = JSON.parse(order.items)
       .map(
         (item) =>
-          `<tr>
-            <td style="padding: 20px 0; border-bottom: 1px solid #ddd; display: flex; align-items: flex-start;">
+          `<tr style="border-bottom: 1px solid #0047572e">
+            <td style="padding: 20px 0; display: flex; align-items: flex-start;">
               <img src="https://ik.imagekit.io/motorolla29/exotic-beds/catalog/${item.photo}?tr=w-150" alt="product_photo" style="width: 50px; height: 50px; border-radius: 5px; object-fit: cover;">
               <span style="font-size: 14px; color: #004757; padding-left: 10px;">
                 ${item.title}
               </span>
             </td>
-            <td style="padding: 20px 10px 20px 10px; border-bottom: 1px solid #ddd; text-align: center; vertical-align: top; font-size: 14px; color: #004757;">
+            <td style="padding: 20px 10px 20px 10px; text-align: center; vertical-align: top; font-size: 14px; color: #004757;">
               ${item.quantity}
             </td>
-            <td style="padding: 20px 0 0 10px; border-bottom: 1px solid #ddd; text-align: right; vertical-align: top; font-size: 14px; color: #004757; white-space: nowrap">
+            <td style="padding: 20px 0 0 10px; text-align: right; vertical-align: top; font-size: 14px; color: #004757; white-space: nowrap">
               ${item.price} EUR
             </td>
           </tr>`
@@ -72,7 +72,9 @@ class MailService {
     <p style="font-size: 16px; text-align: center; color: #4F4A57; margin: 0">
       ${order.address}${order.apartment ? ` apt. ${order.apartment}` : ''}, ${
       order.city
-    }, ${order.country} <br>
+    }, ${order.country}
+    </p>
+    <p style="font-size: 16px; text-align: center; color: #4F4A57; margin: 0">
       Estimated Delivery Date: ${expectedDeliveryDate}
     </p>
     <h3 style="color: #004757; font-size: 20px; text-align: center; font-weight: 400; margin-bottom: 5px;">Recipient Details</h3>
@@ -113,7 +115,7 @@ class MailService {
             <tbody>
             ${itemsList}
             </tbody>
-            <tfoot>
+            <tfoot style="border-bottom: 1px solid #004757a0">
               <tr>
                 <td colspan="2" style="font-size: 16px; padding: 20px; text-align: right;">Total:</td>
                 <td style="font-size: 16px; padding: 20px 0 20px 20px; text-align: right; white-space: nowrap;">${order.originalTotal} ${order.originalCurrency}</td>
