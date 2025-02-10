@@ -81,7 +81,7 @@ class MailService {
       ${order.company ? `Company: ${order.company} <br>` : ''}
       ${
         order.phoneNumber && order.phoneNumber.length > 1
-          ? `Phone: ${order.phoneNumber}`
+          ? `Phone number: ${order.phoneNumber}`
           : ''
       }
     </p>`;
