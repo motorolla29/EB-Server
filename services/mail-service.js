@@ -79,7 +79,11 @@ class MailService {
     <p style="font-size: 16px; text-align: center; color: #4F4A57; margin: 0;">
       Name: ${order.name} ${order.surname || ''} <br>
       ${order.company ? `Company: ${order.company} <br>` : ''}
-      ${order.phone && order.phone.length > 1 ? `Phone: ${order.phone}` : ''}
+      ${
+        order.phoneNumber && order.phoneNumber.length > 1
+          ? `Phone: ${order.phoneNumber}`
+          : ''
+      }
     </p>`;
 
     await this.transporter.sendMail({
