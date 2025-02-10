@@ -70,9 +70,9 @@ class MailService {
     const deliveryInfo = `
     <h3 style="color: #004757; font-size: 20px; text-align: center; font-weight: 400; margin-bottom: 5px;">Delivery Details</h3>
     <p style="font-size: 16px; text-align: center; color: #4F4A57; margin: 0">
-      ${order.address}${order.apartment ? ` apt. ${order.apartment}` : ''}, ${
-      order.city
-    }, ${order.country}
+      ${order.country}, ${order.city}, ${order.address}${
+      order.apartment ? ` apt. ${order.apartment}` : ''
+    }
     </p>
     <p style="font-size: 16px; text-align: center; color: #4F4A57; margin: 0">
       Estimated Delivery Date: ${expectedDeliveryDate}
@@ -124,7 +124,7 @@ class MailService {
           </table>
           ${deliveryInfo}
           <footer style="margin-top: 50px; text-align: center; font-size: 12px; color: #522E4C;">
-            <p>© 2024 Exotic Beds. All rights reserved.</p>
+            <p>© 2025 Exotic Beds. All rights reserved.</p>
             <p style="margin: 0;">Need help? Contact us at <a href="mailto:eutyou@gmail.com" style="color: #522E4C;">eutyou@gmail.com</a></p>
           </footer>
         </div>`,
