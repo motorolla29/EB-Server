@@ -2,6 +2,7 @@ const ApiError = require('../error/ApiError');
 const { Order } = require('../models/models');
 const PaymentConversionService = require('../services/payment-convertion-service');
 const PaymentProviderFactory = require('../factories/PaymentProviderFactory');
+const mailService = require('../services/mail-service');
 
 class OrderController {
   async createOrder(req, res, next) {
@@ -108,7 +109,6 @@ class OrderController {
     try {
       // Получаем уведомление из тела запроса
       const notification = req.body;
-      console.log(notification);
 
       // Можно добавить валидацию (например, проверить, что уведомление действительно от YooKassa)
       if (!notification || !notification.object) {
@@ -131,6 +131,8 @@ class OrderController {
         return res.status(404).json({ error: 'Order not found' });
       }
 
+      let clearLocalStorage = false;
+
       // Обновляем статус заказа в зависимости от события
       if (notification.event === 'payment.succeeded') {
         order.status = 'paid';
@@ -139,6 +141,18 @@ class OrderController {
         if (order.userId) {
           // Предполагается, что Cart — модель для корзины
           await Cart.destroy({ where: { userId: order.userId } });
+        } else {
+          clearLocalStorage = true;
+        }
+
+        // Отправка письма с деталями заказа
+        try {
+          await mailService.sendOrderDetails(order);
+        } catch (emailError) {
+          console.error(
+            'Error sending order details email:',
+            emailError.message
+          );
         }
       } else if (
         notification.event === 'payment.canceled' ||
@@ -152,7 +166,7 @@ class OrderController {
       // Отправляем положительный ответ
       return res
         .status(200)
-        .json({ message: 'Webhook processed successfully' });
+        .json({ message: 'Webhook processed successfully', clearLocalStorage });
     } catch (error) {
       console.error('Webhook processing error:', error);
       return next(ApiError.internal(error.message));
