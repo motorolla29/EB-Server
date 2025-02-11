@@ -85,7 +85,7 @@ const Order = sequelize.define('order', {
   originalCurrency: { type: DataTypes.STRING },
   promocode: { type: DataTypes.STRING },
   promocodeDiscountTotal: { type: DataTypes.DECIMAL(12, 2) },
-  promocodeDiscountPercent: { type: DataTypes.DECIMAL(5, 2) },
+  promocodeDiscountPercent: { type: DataTypes.DECIMAL(2, 0) },
   shippingCost: { type: DataTypes.DECIMAL(8, 2) },
   paymentProviderName: { type: DataTypes.STRING },
   status: {
