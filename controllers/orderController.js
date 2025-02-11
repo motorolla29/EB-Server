@@ -1,5 +1,5 @@
 const ApiError = require('../error/ApiError');
-const { Order, Basket } = require('../models/models');
+const { Order, BasketProduct } = require('../models/models');
 //const PaymentConversionService = require('../services/payment-convertion-service');
 const PaymentProviderFactory = require('../factories/PaymentProviderFactory');
 const mailService = require('../services/mail-service');
