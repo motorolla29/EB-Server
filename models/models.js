@@ -49,7 +49,7 @@ const Lovelist = sequelize.define('lovelist', {
 });
 
 const LovelistProduct = sequelize.define('lovelist_product', {
-  id: { type: DataTypes.STRING, primaryKey: true, autoIncrement: true },
+  id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
   lovelistId: { type: DataTypes.INTEGER },
   productId: { type: DataTypes.STRING },
   title: { type: DataTypes.STRING, unique: true, allowNull: false },
