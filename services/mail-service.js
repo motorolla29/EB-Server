@@ -135,8 +135,7 @@ class MailService {
                         colspan="2"
                         style="padding: 5px 0 5px 0; text-align: right;  color: #4F4A57;"
                       >
-                        Promocode "${order.promocode}" (-
-                        ${order.promocodeDiscountPercent}%):
+                        Promocode "${order.promocode}" (-${order.promocodeDiscountPercent}%):
                       </td>
                       <td style="font-size: 14px; padding: 5px 0 5px 20px; text-align: right; white-space: nowrap; color: #4F4A57">
                         -${order.promocodeDiscountTotal} EUR
