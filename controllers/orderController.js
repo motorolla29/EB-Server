@@ -150,7 +150,7 @@ class OrderController {
 
         // Если заказ привязан к авторизованному пользователю, очищаем корзину в БД
         if (order.userId) {
-          await Basket.destroy({ where: { id: order.userId } });
+          await BasketProduct.destroy({ where: { basketId: order.userId } });
         }
         // Отправка письма с деталями заказа
         try {
