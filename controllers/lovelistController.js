@@ -24,14 +24,16 @@ class LovelistController {
       sale,
     } = req.body;
     const lovelistProduct = await LovelistProduct.findOne({
-      where: { lovelistId: user.id, id: id },
+      where: { lovelistId: user.id, productId: id },
     });
     if (lovelistProduct) {
-      await LovelistProduct.destroy({ where: { lovelistId: user.id, id: id } });
+      await LovelistProduct.destroy({
+        where: { lovelistId: user.id, productId: id },
+      });
     } else {
       await LovelistProduct.create({
         lovelistId: user.id,
-        id,
+        productId: id,
         title,
         description,
         photo,

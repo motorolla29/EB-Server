@@ -1,4 +1,4 @@
-const { BasketProduct, Basket } = require('../models/models');
+const { BasketProduct } = require('../models/models');
 
 class BasketController {
   async getBasket(req, res) {
@@ -24,14 +24,14 @@ class BasketController {
       sale,
     } = req.body;
     const basketProduct = await BasketProduct.findOne({
-      where: { basketId: user.id, id: id },
+      where: { basketId: user.id, productId: id },
     });
     if (basketProduct && basketProduct.quantity) {
       await basketProduct.increment('quantity');
     } else {
       await BasketProduct.create({
         basketId: user.id,
-        id,
+        productId: id,
         title,
         description,
         photo,
@@ -55,7 +55,7 @@ class BasketController {
     const user = req.user;
     const { id } = req.body;
     const basketProduct = await BasketProduct.findOne({
-      where: { basketId: user.id, id: id },
+      where: { basketId: user.id, productId: id },
     });
     if (basketProduct && basketProduct.quantity && basketProduct.quantity > 1) {
       await basketProduct.decrement('quantity');
@@ -72,7 +72,7 @@ class BasketController {
     const user = req.user;
     const { id } = req.body;
     await BasketProduct.destroy({
-      where: { basketId: user.id, id: id },
+      where: { basketId: user.id, productId: id },
     });
     return res.json(
       await BasketProduct.findAll({
