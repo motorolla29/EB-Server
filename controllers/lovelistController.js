@@ -1,13 +1,19 @@
-const { LovelistProduct } = require('../models/models');
+const { LovelistProduct, Lovelist } = require('../models/models');
 
 class LovelistController {
   async getLovelist(req, res) {
     const user = req.user;
-    const lovelist = await LovelistProduct.findAll({
+
+    let lovelist = await Lovelist.findOne({ where: { id: user.id } });
+    if (!lovelist) {
+      lovelist = await Lovelist.create({ id: user.id, userId: user.id });
+    }
+
+    const lovelistProducts = await LovelistProduct.findAll({
       where: { lovelistId: user.id },
       order: [['createdAt', 'DESC']],
     });
-    return res.json(lovelist);
+    return res.json(lovelistProducts);
   }
 
   async toggleProductInLovelist(req, res, next) {

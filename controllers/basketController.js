@@ -1,13 +1,19 @@
-const { BasketProduct } = require('../models/models');
+const { BasketProduct, Basket } = require('../models/models');
 
 class BasketController {
   async getBasket(req, res) {
     const user = req.user;
-    const basket = await BasketProduct.findAll({
+
+    let basket = await Basket.findOne({ where: { id: user.id } });
+    if (!basket) {
+      basket = await Basket.create({ id: user.id, userId: user.id });
+    }
+
+    const basketProducts = await BasketProduct.findAll({
       where: { basketId: user.id },
       order: [['createdAt', 'DESC']],
     });
-    return res.json(basket);
+    return res.json(basketProducts);
   }
 
   async addProductToBasket(req, res, next) {
