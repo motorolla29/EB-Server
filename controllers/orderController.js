@@ -23,21 +23,20 @@ class OrderController {
 
       const userId = req.user?.id || null;
 
-      let amount = total.toString();
+      let amount = total;
       let paymentCurrency = currency.toUpperCase();
       if (paymentProviderName === 'YooKassa' && paymentCurrency !== 'RUB') {
         // Далее шла конвертация евро в рубли для оплаты суммы в рублях на ЮКассе.
         // Поскольку тестовые платежи ЮКассы блокируют большие суммы (более 300 000 руб) и не разрешают проводить оплату решено оставить сумму как есть без конвертации
         // Т.е. платим оригинальную сумму только в рублевом курсе для того чтобы платежи проходили нормально
         // В БД запишем будто оплата прошла в евро
-        amount = total;
+        /////////////////////////////////////////////////////////////////////////////////////////////////////
         // amount = await PaymentConversionService.convertCurrency(
         //   total,
         //   paymentCurrency,
         //   'RUB'
         // );
         // paymentCurrency = 'RUB';
-        paymentCurrency = 'EUR';
       }
 
       const order = await Order.create({
