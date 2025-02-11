@@ -1,6 +1,6 @@
 const ApiError = require('../error/ApiError');
 const { Order } = require('../models/models');
-const PaymentConversionService = require('../services/payment-convertion-service');
+//const PaymentConversionService = require('../services/payment-convertion-service');
 const PaymentProviderFactory = require('../factories/PaymentProviderFactory');
 const mailService = require('../services/mail-service');
 
@@ -26,12 +26,18 @@ class OrderController {
       let amount = total.toString();
       let paymentCurrency = currency.toUpperCase();
       if (paymentProviderName === 'YooKassa' && paymentCurrency !== 'RUB') {
-        amount = await PaymentConversionService.convertCurrency(
-          total,
-          paymentCurrency,
-          'RUB'
-        );
-        paymentCurrency = 'RUB';
+        // Далее шла конвертация евро в рубли для оплаты суммы в рублях на ЮКассе.
+        // Поскольку тестовые платежи ЮКассы блокируют большие суммы (более 300 000 руб) и не разрешают проводить оплату решено оставить сумму как есть без конвертации
+        // Т.е. платим оригинальную сумму только в рублевом курсе для того чтобы платежи проходили нормально
+        // В БД запишем будто оплата прошла в евро
+        amount = total;
+        // amount = await PaymentConversionService.convertCurrency(
+        //   total,
+        //   paymentCurrency,
+        //   'RUB'
+        // );
+        // paymentCurrency = 'RUB';
+        paymentCurrency = 'EUR';
       }
 
       const order = await Order.create({
