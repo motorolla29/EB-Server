@@ -19,7 +19,7 @@ class LovelistController {
   async toggleProductInLovelist(req, res, next) {
     const user = req.user;
     const {
-      id,
+      productId,
       title,
       description,
       photo,
@@ -30,16 +30,16 @@ class LovelistController {
       sale,
     } = req.body;
     const lovelistProduct = await LovelistProduct.findOne({
-      where: { lovelistId: user.id, productId: id },
+      where: { lovelistId: user.id, productId },
     });
     if (lovelistProduct) {
       await LovelistProduct.destroy({
-        where: { lovelistId: user.id, productId: id },
+        where: { lovelistId: user.id, productId },
       });
     } else {
       await LovelistProduct.create({
         lovelistId: user.id,
-        productId: id,
+        productId,
         title,
         description,
         photo,
