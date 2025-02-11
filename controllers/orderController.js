@@ -144,20 +144,13 @@ class OrderController {
         return res.status(404).json({ error: 'Order not found' });
       }
 
-      let clearLocalStorage = false;
-
       // Обновляем статус заказа в зависимости от события
       if (notification.event === 'payment.succeeded') {
         order.status = 'paid';
-
         // Если заказ привязан к авторизованному пользователю, очищаем корзину в БД
         if (order.userId) {
-          // Предполагается, что Cart — модель для корзины
           await Cart.destroy({ where: { userId: order.userId } });
-        } else {
-          clearLocalStorage = true;
         }
-
         // Отправка письма с деталями заказа
         try {
           await mailService.sendOrderDetails(order);
@@ -179,7 +172,7 @@ class OrderController {
       // Отправляем положительный ответ
       return res
         .status(200)
-        .json({ message: 'Webhook processed successfully', clearLocalStorage });
+        .json({ message: 'Webhook processed successfully' });
     } catch (error) {
       console.error('Webhook processing error:', error);
       return next(ApiError.internal(error.message));
