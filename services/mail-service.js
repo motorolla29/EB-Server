@@ -50,7 +50,7 @@ class MailService {
     const itemsList = JSON.parse(order.items)
       .map(
         (item) =>
-          `<tr style="border-bottom: 1px solid #0047572e">
+          `<tr style="border-bottom: 1px solid #A1C6BA">
             <td style="padding: 20px 0; display: flex; align-items: flex-start;">
               <img src="https://ik.imagekit.io/motorolla29/exotic-beds/catalog/${
                 item.photo
@@ -121,8 +121,8 @@ class MailService {
             </tbody>
             <tfoot style="border-bottom: 1px solid #004757a0">
               <tr>
-                <td colspan="2" style="padding: 5px 0 5px 20px; text-align: right;  color: #4F4A57;">Shipping cost:</td>
-                <td style="font-size: 14px; padding: 5px 0 5px 10px; text-align: right; white-space: nowrap; color: #4F4A57;">
+                <td colspan="2" style="padding: 10px 0 5px 0; text-align: right;  color: #4F4A57;">Shipping cost:</td>
+                <td style="font-size: 14px; padding: 10px 0 5px 20px; text-align: right; white-space: nowrap; color: #4F4A57;">
                   ${order.shippingCost} EUR
                 </td>
               </tr>
@@ -133,20 +133,20 @@ class MailService {
                   ? `<tr>
                       <td
                         colspan="2"
-                        style="padding: 5px 0 5px 20px; text-align: right;  color: #4F4A57;"
+                        style="padding: 5px 0 5px 0; text-align: right;  color: #4F4A57;"
                       >
                         Promocode - ${order.promocode} (-
                         ${order.promocodeDiscountPercent}%):
                       </td>
-                      <td style="font-size: 14px; padding: 5px 0 5px 10px; text-align: right; white-space: nowrap; color: #4F4A57">
+                      <td style="font-size: 14px; padding: 5px 0 5px 20px; text-align: right; white-space: nowrap; color: #4F4A57">
                         -${order.promocodeDiscountTotal} EUR
                       </td>
                     </tr>`
                   : ''
               }
               <tr>
-                <td colspan="2" style="font-size: 16px; padding: 20px; text-align: right;">Total:</td>
-                <td style="font-size: 16px; padding: 20px 0 20px 20px; text-align: right; white-space: nowrap;">${
+                <td colspan="2" style="font-size: 16px; padding: 5px 0 10px 0; text-align: right;">Total:</td>
+                <td style="font-size: 16px; padding: 5px 0 10px 20px; text-align: right; white-space: nowrap;">${
                   order.originalTotal
                 } ${order.originalCurrency}</td>
               </tr>
