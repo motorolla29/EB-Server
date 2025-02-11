@@ -9,7 +9,7 @@ class YooKassaProvider {
     const paymentData = {
       amount: {
         value: order.total,
-        currency: order.currency,
+        currency: 'RUB',
       },
       capture: true,
       confirmation: {
