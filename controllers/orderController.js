@@ -8,6 +8,7 @@ class OrderController {
   async createOrder(req, res, next) {
     try {
       const {
+        userId,
         items,
         total,
         currency = 'EUR',
@@ -20,8 +21,6 @@ class OrderController {
         description,
         returnUrl,
       } = req.body;
-
-      const userId = req.user?.id || null;
 
       let amount = total;
       let paymentCurrency = currency.toUpperCase();
@@ -124,12 +123,12 @@ class OrderController {
       const notification = req.body;
 
       // Можно добавить валидацию (например, проверить, что уведомление действительно от YooKassa)
-      if (!notification || !notification.object) {
+      if (!notification?.object) {
         return res.status(400).json({ error: 'Invalid notification data' });
       }
 
       const payment = notification.object; // объект платежа
-      const orderId = payment.metadata && payment.metadata.orderId;
+      const orderId = payment.metadata && payment.metadata?.orderId;
 
       if (!orderId) {
         return res
@@ -147,6 +146,8 @@ class OrderController {
       // Обновляем статус заказа в зависимости от события
       if (notification.event === 'payment.succeeded') {
         order.status = 'paid';
+        await order.save();
+
         // Если заказ привязан к авторизованному пользователю, очищаем корзину в БД
         if (order.userId) {
           await Cart.destroy({ where: { userId: order.userId } });
@@ -164,10 +165,9 @@ class OrderController {
         notification.event === 'payment.canceled' ||
         notification.event === 'payment.failed'
       ) {
-        order.status = 'failed'; // или 'canceled'
+        order.status = 'failed';
+        await order.save();
       }
-
-      await order.save();
 
       // Отправляем положительный ответ
       return res
