@@ -22,6 +22,10 @@ class OrderController {
         returnUrl,
       } = req.body;
 
+      if (deliveryData?.phoneNumber === '+') {
+        deliveryData.phoneNumber = null;
+      }
+
       let amount = total;
       let paymentCurrency = currency.toUpperCase();
       if (paymentProviderName === 'YooKassa' && paymentCurrency !== 'RUB') {
