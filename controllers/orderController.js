@@ -82,7 +82,10 @@ class OrderController {
   async getOrders(req, res, next) {
     try {
       const userId = req.user.id;
-      const orders = await Order.findAll({ where: { userId } });
+      const orders = await Order.findAll({
+        where: { userId },
+        order: [['createdAt', 'DESC']],
+      });
       return res.status(200).json(orders);
     } catch (e) {
       return next(ApiError.badRequest(e.message));
