@@ -83,6 +83,7 @@ const Order = sequelize.define('order', {
   id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
   userId: { type: DataTypes.INTEGER, allowNull: true },
   items: { type: DataTypes.JSON, allowNull: false },
+  subtotal: { type: DataTypes.DECIMAL(12, 2) },
   total: { type: DataTypes.DECIMAL(12, 2) },
   currency: { type: DataTypes.STRING },
   originalTotal: { type: DataTypes.DECIMAL(12, 2) },

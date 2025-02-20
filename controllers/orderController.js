@@ -10,6 +10,7 @@ class OrderController {
       const {
         userId,
         items,
+        subtotal,
         total,
         currency = 'EUR',
         promocode,
@@ -46,6 +47,7 @@ class OrderController {
         userId,
         items,
         paymentProviderName,
+        subtotal,
         total: amount,
         currency: paymentCurrency,
         originalTotal: total,
@@ -99,6 +101,9 @@ class OrderController {
       const order = await Order.findOne({ where: { id } });
       if (!order) {
         return next(ApiError.badRequest('Order not found'));
+      }
+      if (order.userId !== req.user.id) {
+        return next(ApiError.forbidden('Access denied'));
       }
       return res.status(200).json(order);
     } catch (e) {

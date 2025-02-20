@@ -123,7 +123,7 @@ class MailService {
               <tr>
                 <td colspan="2" style="padding: 10px 0 5px 0; text-align: right;  color: #4F4A57;">Shipping cost:</td>
                 <td style="font-size: 14px; padding: 10px 0 5px 20px; text-align: right; white-space: nowrap; color: #4F4A57;">
-                  ${order.shippingCost} EUR
+                  ${order.shippingCost} ${order.originalCurrency}
                 </td>
               </tr>
               ${
@@ -138,7 +138,7 @@ class MailService {
                         Promocode "${order.promocode}" (-${order.promocodeDiscountPercent}%):
                       </td>
                       <td style="font-size: 14px; padding: 5px 0 5px 20px; text-align: right; white-space: nowrap; color: #4F4A57">
-                        -${order.promocodeDiscountTotal} EUR
+                        -${order.promocodeDiscountTotal} ${order.originalCurrency}
                       </td>
                     </tr>`
                   : ''
