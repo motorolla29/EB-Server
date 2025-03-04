@@ -90,7 +90,6 @@ class OrderController {
       });
       return res.status(200).json(orders);
     } catch (e) {
-      console.log(e.message);
       return next(ApiError.badRequest(e.message));
     }
   }
