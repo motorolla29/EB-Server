@@ -62,14 +62,17 @@ class ProductController {
         sale,
         availableQuantity,
         rating,
-        isNew,
       } = req.body;
 
       const product = await Product.findOne({ where: { id } });
 
+      const isNew = product.isNew;
+
       if (!product) {
         return next(ApiError.badRequest('Product not found'));
       }
+
+      let newId = id;
 
       // Если title изменился, генерируем новый id
       if (product.title !== title) {
@@ -83,10 +86,57 @@ class ProductController {
           );
         }
 
-        product.id = newId;
+        const newProduct = await Product.create({
+          id: newId,
+          categoryId,
+          photo,
+          title,
+          description,
+          price,
+          sale,
+          availableQuantity,
+          rating,
+          isNew: isNew,
+        });
+
+        await BasketProduct.update(
+          {
+            productId: newId,
+            categoryId,
+            photo,
+            title,
+            description,
+            price,
+            sale,
+            availableQuantity,
+            rating,
+            isNew,
+          },
+          { where: { productId: id } }
+        );
+        await LovelistProduct.update(
+          {
+            productId: newId,
+            categoryId,
+            photo,
+            title,
+            description,
+            price,
+            sale,
+            availableQuantity,
+            rating,
+            isNew,
+          },
+          { where: { productId: id } }
+        );
+
+        await Product.destroy({ where: { id } });
+
+        return res.json(newProduct);
       }
 
       await product.update({
+        id: newId,
         categoryId,
         photo,
         title,
@@ -95,8 +145,39 @@ class ProductController {
         sale,
         availableQuantity,
         rating,
-        isNew,
+        isNew: isNew,
       });
+
+      await BasketProduct.update(
+        {
+          productId: newId,
+          categoryId,
+          photo,
+          title,
+          description,
+          price,
+          sale,
+          availableQuantity,
+          rating,
+          isNew,
+        },
+        { where: { productId: id } }
+      );
+      await LovelistProduct.update(
+        {
+          productId: newId,
+          categoryId,
+          photo,
+          title,
+          description,
+          price,
+          sale,
+          availableQuantity,
+          rating,
+          isNew,
+        },
+        { where: { productId: id } }
+      );
 
       return res.json(product);
     } catch (e) {
