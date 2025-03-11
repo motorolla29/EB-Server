@@ -76,7 +76,7 @@ class ProductController {
 
       // Если title изменился, генерируем новый id
       if (product.title !== title) {
-        const newId = title.trim().toLowerCase().replace(/\s+/g, '-');
+        const newId = title.trim().replace(/\s+/g, '-');
 
         // Проверяем, существует ли товар с новым id
         const existingProduct = await Product.findOne({ where: { id: newId } });
