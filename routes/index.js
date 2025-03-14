@@ -8,6 +8,7 @@ const basketRouter = require('./basketRouter');
 const lovelistRouter = require('./lovelistRouter');
 const orderRouter = require('./orderRouter');
 const imagekitRouter = require('./imagekitRouter');
+const reviewRouter = require('./reviewRouter');
 
 router.use('/user', userRouter);
 router.use('/category', categoryRouter);
@@ -16,5 +17,6 @@ router.use('/basket', basketRouter);
 router.use('/lovelist', lovelistRouter);
 router.use('/orders', orderRouter);
 router.use('/imagekit-auth', imagekitRouter);
+router.use('/reviews', reviewRouter);
 
 module.exports = router;

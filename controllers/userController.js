@@ -310,19 +310,13 @@ class UserController {
         where: { id: userData.id },
       });
       if (user.photo) {
-        const publicId = `user-avatars/${user.photo
-          .split('/')
-          .pop()
-          .split('.')
-          .slice(0, -1)
-          .join('.')}`; // Извлекаем public_id
-        await cloudinary.uploader.destroy(publicId);
+        await cloudinary.uploader.destroy(`user-avatars/${user.photo}`);
       }
 
       // Сохранение URL изображения в базе данных
       await User.update(
         {
-          photo: uploadResult.secure_url,
+          photo: fileName,
         },
         {
           where: { id: userData.id },
@@ -357,13 +351,8 @@ class UserController {
       if (!user.photo) {
         return next(ApiError.notFound('User does not have an avatar'));
       }
-      const publicId = `user-avatars/${user.photo
-        .split('/')
-        .pop()
-        .split('.')
-        .slice(0, -1)
-        .join('.')}`; // Извлекаем public_id
-      await cloudinary.uploader.destroy(publicId);
+
+      await cloudinary.uploader.destroy(`user-avatars/${user.photo}`);
 
       // Удаление записи аватара из базы данных
       await User.update(

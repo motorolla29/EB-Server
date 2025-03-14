@@ -112,12 +112,29 @@ const Order = sequelize.define('order', {
   email: { type: DataTypes.STRING },
 });
 
+const Review = sequelize.define('review', {
+  id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
+  userId: { type: DataTypes.INTEGER },
+  productId: { type: DataTypes.STRING },
+  rating: {
+    type: DataTypes.FLOAT,
+    validate: { min: 1, max: 5 },
+  },
+  comment: { type: DataTypes.TEXT },
+});
+
+const ReviewRate = sequelize.define('review_rate', {
+  id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
+  userId: { type: DataTypes.INTEGER, allowNull: false },
+  reviewId: { type: DataTypes.INTEGER, allowNull: false },
+  isLike: { type: DataTypes.BOOLEAN, allowNull: false },
+});
+
 User.hasMany(Token, {
   as: 'tokens',
   foreignKey: 'userId',
   onDelete: 'CASCADE',
 });
-
 Token.belongsTo(User, { foreignKey: 'userId' });
 
 User.hasOne(Basket, { onDelete: 'CASCADE' });
@@ -134,6 +151,15 @@ LovelistProduct.belongsTo(Lovelist);
 
 Category.hasMany(Product);
 
+User.hasMany(Review, { foreignKey: 'userId', onDelete: 'CASCADE' });
+Review.belongsTo(User, { foreignKey: 'userId' });
+
+Product.hasMany(Review, { foreignKey: 'productId', onDelete: 'CASCADE' });
+Review.belongsTo(Product, { foreignKey: 'productId' });
+
+Review.hasMany(ReviewRate, { foreignKey: 'reviewId', onDelete: 'CASCADE' });
+ReviewRate.belongsTo(Review, { foreignKey: 'reviewId' });
+
 module.exports = {
   Token,
   User,
@@ -144,4 +170,6 @@ module.exports = {
   Product,
   Category,
   Order,
+  Review,
+  ReviewRate,
 };
