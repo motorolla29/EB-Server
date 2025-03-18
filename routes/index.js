@@ -16,7 +16,7 @@ router.use('/product', productRouter);
 router.use('/basket', basketRouter);
 router.use('/lovelist', lovelistRouter);
 router.use('/orders', orderRouter);
-router.use('/imagekit-auth', imagekitRouter);
+router.use('/imagekit', imagekitRouter);
 router.use('/reviews', reviewRouter);
 
 module.exports = router;
