@@ -157,8 +157,17 @@ Review.belongsTo(User, { foreignKey: 'userId' });
 Product.hasMany(Review, { foreignKey: 'productId', onDelete: 'CASCADE' });
 Review.belongsTo(Product, { foreignKey: 'productId' });
 
-Review.hasMany(ReviewRate, { foreignKey: 'reviewId', onDelete: 'CASCADE' });
+Review.hasMany(ReviewRate, {
+  foreignKey: 'reviewId',
+  onDelete: 'CASCADE',
+});
 ReviewRate.belongsTo(Review, { foreignKey: 'reviewId' });
+
+User.hasMany(ReviewRate, {
+  foreignKey: 'userId',
+  onDelete: 'CASCADE',
+});
+ReviewRate.belongsTo(User, { foreignKey: 'userId' });
 
 module.exports = {
   Token,
