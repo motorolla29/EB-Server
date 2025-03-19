@@ -14,7 +14,7 @@ module.exports = function (role) {
         );
       }
 
-      const decoded = jwt.verify(token, process.env.SECRET_KEY);
+      const decoded = jwt.verify(token, process.env.JWT_ACCESS_SECRET);
 
       if (!decoded) {
         return next(
