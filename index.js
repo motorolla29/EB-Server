@@ -28,7 +28,13 @@ app.use(
     credentials: true,
   })
 );
-app.use(express.json());
+app.use((req, res, next) => {
+  if (req.originalUrl === '/api/orders/stripewebhook') {
+    next(); // Не применяем JSON-парсер
+  } else {
+    express.json()(req, res, next);
+  }
+});
 app.use(express.static(path.resolve(__dirname, 'static')));
 app.use(
   fileUpload({

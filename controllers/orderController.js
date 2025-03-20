@@ -3,6 +3,7 @@ const { Order, BasketProduct } = require('../models/models');
 //const PaymentConversionService = require('../services/payment-convertion-service');
 const PaymentProviderFactory = require('../factories/PaymentProviderFactory');
 const mailService = require('../services/mail-service');
+const stripe = require('stripe')(process.env.STRIPE_PRIVATE_KEY);
 
 class OrderController {
   async createOrder(req, res, next) {
@@ -188,6 +189,132 @@ class OrderController {
     } catch (error) {
       console.error('Webhook processing error:', error);
       return next(ApiError.internal(error.message));
+    }
+  }
+
+  async stripeWebhook(req, res, next) {
+    const sig = req.headers['stripe-signature'];
+    const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET; // Секретный ключ вебхука
+
+    let event;
+
+    try {
+      // Проверка подписи, чтобы убедиться, что запрос пришел от Stripe
+      event = stripe.webhooks.constructEvent(req.body, sig, endpointSecret);
+      console.log('Received event:', event);
+    } catch (err) {
+      console.error('Webhook signature verification failed:', err.message);
+      return res.status(400).send(`Webhook Error: ${err.message}`);
+    }
+
+    try {
+      switch (event.type) {
+        case 'checkout.session.completed': {
+          const session = event.data.object;
+          const orderId = session.metadata?.orderId;
+
+          if (!orderId) {
+            return res.status(400).json({ error: 'Order ID not found' });
+          }
+
+          const order = await Order.findOne({ where: { id: orderId } });
+
+          if (!order) {
+            return res.status(404).json({ error: 'Order not found' });
+          }
+          // Обновление статуса при успешной оплате
+          if (session.payment_status === 'paid') {
+            order.status = 'paid';
+            await order.save();
+
+            // Очистка корзины, если она связана с пользователем
+            if (order.userId) {
+              await BasketProduct.destroy({
+                where: { basketId: order.userId },
+              });
+            }
+
+            // Отправка письма с подтверждением заказа
+            try {
+              await mailService.sendOrderDetails(order);
+              console.log('mail sended');
+            } catch (emailError) {
+              console.error(
+                'Error sending order details email:',
+                emailError.message
+              );
+            }
+          } else {
+            console.log(
+              `Payment pending for order ${orderId}, waiting for confirmation.`
+            );
+          }
+          break;
+        }
+        case 'checkout.session.async_payment_succeeded': {
+          const session = event.data.object;
+          orderId = session.metadata?.orderId;
+
+          if (!orderId) {
+            return res.status(400).json({ error: 'Order ID not found' });
+          }
+
+          const order = await Order.findOne({ where: { id: orderId } });
+
+          if (!order) {
+            return res.status(404).json({ error: 'Order not found' });
+          }
+
+          order.status = 'paid';
+          await order.save();
+
+          if (order.userId) {
+            await BasketProduct.destroy({ where: { basketId: order.userId } });
+          }
+
+          try {
+            await mailService.sendOrderDetails(order);
+          } catch (emailError) {
+            console.error(
+              'Error sending order details email:',
+              emailError.message
+            );
+          }
+
+          break;
+        }
+
+        case 'checkout.session.async_payment_failed': {
+          const session = event.data.object;
+          orderId = session.metadata?.orderId;
+
+          if (!orderId) {
+            return res.status(400).json({ error: 'Order ID not found' });
+          }
+
+          const order = await Order.findOne({ where: { id: orderId } });
+
+          if (!order) {
+            return res.status(404).json({ error: 'Order not found' });
+          }
+
+          order.status = 'failed';
+          await order.save();
+
+          break;
+        }
+
+        default:
+          console.log(`Unhandled event type: ${event.type}`);
+      }
+
+      // Возвращаем успешный ответ
+      return res
+        .status(200)
+        .json({ message: 'Webhook processed successfully' });
+    } catch (err) {
+      console.error('Webhook handling error:', err);
+      return res.status(500).json({ error: 'Internal server error' });
     }
   }
 }

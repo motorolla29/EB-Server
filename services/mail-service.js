@@ -47,14 +47,14 @@ class MailService {
       .add(10, 'day')
       .format('DD MMMM YYYY');
 
-    const itemsList = JSON.parse(order.items)
+    const itemsList = order.items
       .map(
         (item) =>
           `<tr style="border-bottom: 1px solid #A1C6BA">
             <td style="padding: 20px 0; display: flex; align-items: flex-start;">
               <img src="https://ik.imagekit.io/motorolla29/exotic-beds/catalog/${
                 item.photo
-              }?tr=w-150" alt="product_photo" style="width: 50px; height: 50px; border-radius: 5px; object-fit: cover;">
+              }?tr=w-150" alt="product_photo" style="width: 50px; height: 50px; border-radius: 5px; object-fit: contain; object-position: center; background: #eefef664">
               <span style="font-size: 14px; color: #004757; padding-left: 10px;">
                 ${item.title}
               </span>
@@ -62,7 +62,7 @@ class MailService {
             <td style="padding: 20px 10px 20px 10px; text-align: center; vertical-align: top; font-size: 14px; color: #004757;">
               ${item.quantity}
             </td>
-            <td style="padding: 20px 0 0 10px; text-align: right; vertical-align: top; font-size: 14px; color: #004757; white-space: nowrap">
+            <td style="padding: 20px 10px 20px 10px; text-align: right; vertical-align: top; font-size: 14px; color: #004757; white-space: nowrap">
               ${item.sale || item.price} EUR
             </td>
           </tr>`

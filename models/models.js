@@ -99,7 +99,7 @@ const Order = sequelize.define('order', {
     defaultValue: 'pending',
   },
   paymentId: { type: DataTypes.STRING, allowNull: true },
-  confirmationUrl: { type: DataTypes.STRING, allowNull: true },
+  confirmationUrl: { type: DataTypes.TEXT(1024), allowNull: true },
   country: { type: DataTypes.STRING },
   city: { type: DataTypes.STRING },
   postalCode: { type: DataTypes.STRING },
