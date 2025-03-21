@@ -10,6 +10,7 @@
   "author": "motorolla29",
   "license": "ISC",
   "dependencies": {
+    "@mollie/api-client": "^4.2.0",
     "axios": "^1.7.9",
     "bcrypt": "^5.1.1",
     "bcryptjs": "^2.4.3",

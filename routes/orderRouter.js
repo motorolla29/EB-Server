@@ -14,5 +14,10 @@ router.post(
   express.raw({ type: 'application/json' }),
   orderController.stripeWebhook
 );
+router.post(
+  '/molliewebhook',
+  express.urlencoded({ extended: true }),
+  orderController.mollieWebhook
+);
 
 module.exports = router;

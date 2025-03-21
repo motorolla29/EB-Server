@@ -1,3 +1,4 @@
+const MollieProvider = require('../payment-providers/MollieProvider');
 const StripeProvider = require('../payment-providers/StripeProvider');
 const YooKassaProvider = require('../payment-providers/YooKassaProvider');
 
@@ -8,6 +9,8 @@ class PaymentProviderFactory {
         return new YooKassaProvider();
       case 'Stripe':
         return new StripeProvider();
+      case 'Mollie':
+        return new MollieProvider();
       default:
         throw new Error('Unknown payment provider');
     }

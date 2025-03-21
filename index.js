@@ -29,7 +29,10 @@ app.use(
   })
 );
 app.use((req, res, next) => {
-  if (req.originalUrl === '/api/orders/stripewebhook') {
+  if (
+    req.originalUrl === '/api/orders/stripewebhook' ||
+    req.originalUrl === '/api/orders/molliewebhook'
+  ) {
     next(); // Не применяем JSON-парсер
   } else {
     express.json()(req, res, next);

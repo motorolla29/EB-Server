@@ -3,6 +3,7 @@ const { Order, BasketProduct } = require('../models/models');
 //const PaymentConversionService = require('../services/payment-convertion-service');
 const PaymentProviderFactory = require('../factories/PaymentProviderFactory');
 const mailService = require('../services/mail-service');
+const mollieClient = require('../config/mollieClient');
 const stripe = require('stripe')(process.env.STRIPE_PRIVATE_KEY);
 
 class OrderController {
@@ -315,6 +316,67 @@ class OrderController {
     } catch (err) {
       console.error('Webhook handling error:', err);
       return res.status(500).json({ error: 'Internal server error' });
+    }
+  }
+
+  async mollieWebhook(req, res, next) {
+    try {
+      const paymentId = req.body.id;
+
+      if (!paymentId) {
+        return res.status(400).json({ error: 'Payment ID not provided' });
+      }
+
+      const paymentResponse = await mollieClient.payments.get(paymentId);
+
+      const orderId = paymentResponse.metadata?.orderId;
+      if (!orderId) {
+        return res
+          .status(400)
+          .json({ error: 'Order ID not found in metadata' });
+      }
+
+      const order = await Order.findOne({ where: { id: orderId } });
+      if (!order) {
+        return res.status(404).json({ error: 'Order not found' });
+      }
+
+      if (paymentResponse.status === 'paid') {
+        order.status = 'paid';
+        await order.save();
+
+        if (order.userId) {
+          await BasketProduct.destroy({ where: { basketId: order.userId } });
+        }
+
+        try {
+          await mailService.sendOrderDetails(order);
+        } catch (emailError) {
+          console.error(
+            'Error sending order details email:',
+            emailError.message
+          );
+        }
+      } else if (
+        paymentResponse.status === 'open' ||
+        paymentResponse.status === 'pending'
+      ) {
+        order.status = 'pending';
+        await order.save();
+      } else if (
+        paymentResponse.status === 'cancelled' ||
+        paymentResponse.status === 'failed'
+      ) {
+        order.status = 'failed';
+        await order.save();
+      }
+
+      return res
+        .status(200)
+        .json({ message: 'Webhook processed successfully' });
+    } catch (error) {
+      console.error('Error processing webhook:', error);
+      return next(ApiError.internal(error.message));
     }
   }
 }
