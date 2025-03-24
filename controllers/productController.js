@@ -1,4 +1,9 @@
-const { Product, BasketProduct, LovelistProduct } = require('../models/models');
+const {
+  Product,
+  Review,
+  BasketProduct,
+  LovelistProduct,
+} = require('../models/models');
 const ApiError = require('../error/ApiError');
 
 class ProductController {
@@ -129,6 +134,8 @@ class ProductController {
           },
           { where: { productId: id } }
         );
+
+        await Review.update({ productId: newId }, { where: { productId: id } });
 
         await Product.destroy({ where: { id } });
 
