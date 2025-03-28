@@ -14,9 +14,10 @@ async function updateBasketQuantitiesForProduct(
     item.availableQuantity = availableQuantity;
 
     if (item.quantity > availableQuantity) {
-      item.quantity = availableQuantity;
-      await item.save({ transaction });
+      item.quantity = availableQuantity > 0 ? availableQuantity : item.quantity;
     }
+
+    await item.save({ transaction });
   }
 }
 

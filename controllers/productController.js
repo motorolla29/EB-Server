@@ -5,6 +5,13 @@ const {
   LovelistProduct,
 } = require('../models/models');
 const ApiError = require('../error/ApiError');
+const sequelize = require('../db');
+const {
+  updateLovelistAvailabilityForProduct,
+} = require('../services/lovelist-service');
+const {
+  updateBasketQuantitiesForProduct,
+} = require('../services/basket-service');
 
 class ProductController {
   async create(req, res, next) {
@@ -79,30 +86,108 @@ class ProductController {
 
       let newId = id;
 
-      // Если title изменился, генерируем новый id
-      if (product.title !== title) {
-        const newId = title.trim().replace(/\s+/g, '-');
+      const transaction = await sequelize.transaction();
 
-        // Проверяем, существует ли товар с новым id
-        const existingProduct = await Product.findOne({ where: { id: newId } });
-        if (existingProduct) {
-          return next(
-            ApiError.badRequest('Product with this ID already exists')
+      try {
+        // Если title изменился, генерируем новый id
+        if (product.title !== title) {
+          const newId = title.trim().replace(/\s+/g, '-');
+
+          // Проверяем, существует ли товар с новым id
+          const existingProduct = await Product.findOne({
+            where: { id: newId },
+          });
+          if (existingProduct) {
+            return next(
+              ApiError.badRequest('Product with this ID already exists')
+            );
+          }
+
+          const newProduct = await Product.create(
+            {
+              id: newId,
+              categoryId,
+              photo,
+              title,
+              description,
+              price,
+              sale,
+              availableQuantity,
+              rating,
+              isNew: isNew,
+            },
+            { transaction }
           );
+
+          await BasketProduct.update(
+            {
+              productId: newId,
+              categoryId,
+              photo,
+              title,
+              description,
+              price,
+              sale,
+              availableQuantity,
+              rating,
+              isNew,
+            },
+            { where: { productId: id }, transaction }
+          );
+          await LovelistProduct.update(
+            {
+              productId: newId,
+              categoryId,
+              photo,
+              title,
+              description,
+              price,
+              sale,
+              availableQuantity,
+              rating,
+              isNew,
+            },
+            { where: { productId: id }, transaction }
+          );
+
+          await Review.update(
+            { productId: newId },
+            { where: { productId: id } }
+          );
+
+          await Product.destroy({ where: { id } });
+
+          await updateBasketQuantitiesForProduct(
+            newId,
+            availableQuantity,
+            transaction
+          );
+          await updateLovelistAvailabilityForProduct(
+            newId,
+            availableQuantity,
+            transaction
+          );
+
+          await transaction.commit();
+
+          return res.json(newProduct);
         }
 
-        const newProduct = await Product.create({
-          id: newId,
-          categoryId,
-          photo,
-          title,
-          description,
-          price,
-          sale,
-          availableQuantity,
-          rating,
-          isNew: isNew,
-        });
+        await product.update(
+          {
+            id: newId,
+            categoryId,
+            photo,
+            title,
+            description,
+            price,
+            sale,
+            availableQuantity,
+            rating,
+            isNew: isNew,
+          },
+          { transaction }
+        );
 
         await BasketProduct.update(
           {
@@ -117,7 +202,7 @@ class ProductController {
             rating,
             isNew,
           },
-          { where: { productId: id } }
+          { where: { productId: id }, transaction }
         );
         await LovelistProduct.update(
           {
@@ -132,61 +217,27 @@ class ProductController {
             rating,
             isNew,
           },
-          { where: { productId: id } }
+          { where: { productId: id }, transaction }
         );
 
-        await Review.update({ productId: newId }, { where: { productId: id } });
+        await updateBasketQuantitiesForProduct(
+          newId,
+          availableQuantity,
+          transaction
+        );
+        await updateLovelistAvailabilityForProduct(
+          newId,
+          availableQuantity,
+          transaction
+        );
 
-        await Product.destroy({ where: { id } });
+        await transaction.commit();
 
-        return res.json(newProduct);
+        return res.json(product);
+      } catch (error) {
+        await transaction.rollback();
+        throw error;
       }
-
-      await product.update({
-        id: newId,
-        categoryId,
-        photo,
-        title,
-        description,
-        price,
-        sale,
-        availableQuantity,
-        rating,
-        isNew: isNew,
-      });
-
-      await BasketProduct.update(
-        {
-          productId: newId,
-          categoryId,
-          photo,
-          title,
-          description,
-          price,
-          sale,
-          availableQuantity,
-          rating,
-          isNew,
-        },
-        { where: { productId: id } }
-      );
-      await LovelistProduct.update(
-        {
-          productId: newId,
-          categoryId,
-          photo,
-          title,
-          description,
-          price,
-          sale,
-          availableQuantity,
-          rating,
-          isNew,
-        },
-        { where: { productId: id } }
-      );
-
-      return res.json(product);
     } catch (e) {
       next(ApiError.badRequest(e.message));
     }
