@@ -4,6 +4,7 @@ const { Order, BasketProduct } = require('../models/models');
 const PaymentProviderFactory = require('../factories/PaymentProviderFactory');
 const mailService = require('../services/mail-service');
 const mollieClient = require('../config/mollieClient');
+const productService = require('../services/product-service');
 const stripe = require('stripe')(process.env.STRIPE_PRIVATE_KEY);
 
 class OrderController {
@@ -162,6 +163,14 @@ class OrderController {
         order.status = 'paid';
         await order.save();
 
+        // Уменьшаем количество товара
+        try {
+          await productService.decreaseProductStock(order.items);
+        } catch (error) {
+          console.error('Error decreasing product stock:', error.message);
+          // Здесь можно уведомить администратора или выполнить откат, если это критично.
+        }
+
         // Если заказ привязан к авторизованному пользователю, очищаем корзину в БД
         if (order.userId) {
           await BasketProduct.destroy({ where: { basketId: order.userId } });
@@ -228,6 +237,13 @@ class OrderController {
             order.status = 'paid';
             await order.save();
 
+            // Уменьшаем количество товара
+            try {
+              await productService.decreaseProductStock(order.items);
+            } catch (error) {
+              console.error('Error decreasing product stock:', error.message);
+            }
+
             // Очистка корзины, если она связана с пользователем
             if (order.userId) {
               await BasketProduct.destroy({
@@ -268,6 +284,13 @@ class OrderController {
 
           order.status = 'paid';
           await order.save();
+
+          // Уменьшаем количество товара
+          try {
+            await productService.decreaseProductStock(order.items);
+          } catch (error) {
+            console.error('Error decreasing product stock:', error.message);
+          }
 
           if (order.userId) {
             await BasketProduct.destroy({ where: { basketId: order.userId } });
@@ -344,6 +367,13 @@ class OrderController {
       if (paymentResponse.status === 'paid') {
         order.status = 'paid';
         await order.save();
+
+        // Уменьшаем количество товара
+        try {
+          await productService.decreaseProductStock(order.items);
+        } catch (error) {
+          console.error('Error decreasing product stock:', error.message);
+        }
 
         if (order.userId) {
           await BasketProduct.destroy({ where: { basketId: order.userId } });
