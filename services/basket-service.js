@@ -11,6 +11,8 @@ async function updateBasketQuantitiesForProduct(
   });
 
   for (const item of basketItems) {
+    item.availableQuantity = availableQuantity;
+
     if (item.quantity > availableQuantity) {
       item.quantity = availableQuantity;
       await item.save({ transaction });
