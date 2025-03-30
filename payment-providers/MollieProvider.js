@@ -10,8 +10,7 @@ class MollieProvider {
         },
         description: `Order №${order.id} Payment`,
         redirectUrl: returnUrl,
-        webhookUrl:
-          'https://630f-185-77-216-5.ngrok-free.app/api/orders/molliewebhook',
+        webhookUrl: 'https://eb-server-phi.vercel.app/api/orders/molliewebhook',
         metadata: {
           orderId: order.id,
         },
