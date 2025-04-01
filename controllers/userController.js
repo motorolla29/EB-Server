@@ -405,10 +405,10 @@ class UserController {
 
       // Попытка отправки письма активации
       try {
-        const result = await mailService.sendActivationLink(
+        await mailService.sendActivationLink(
           email,
           `${process.env.API_URL}/api/user/activate/${activationLink}`
-        );\
+        );
       } catch (mailError) {
         console.error('Error sending email:', mailError.message);
         return next(
