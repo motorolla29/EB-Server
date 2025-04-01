@@ -12,7 +12,7 @@ class MailService {
   }
   async sendActivationLink(to, link) {
     await this.transporter.sendMail({
-      from: process.env.SMTP_USER,
+      from: process.env.SMTP_MAIL_FROM,
       to: to,
       subject: 'Activation of account on the Exotic Beds website',
       text: '',
@@ -92,7 +92,7 @@ class MailService {
     </p>`;
 
     await this.transporter.sendMail({
-      from: process.env.SMTP_USER,
+      from: process.env.SMTP_MAIL_FROM,
       to: email,
       subject: 'Your Exotic Beds Order',
       text: '',
@@ -162,7 +162,7 @@ class MailService {
   }
   async sendPasswordResetCode(email, code) {
     await this.transporter.sendMail({
-      from: process.env.SMTP_USER,
+      from: process.env.SMTP_MAIL_FROM,
       to: email,
       subject: 'Your Password Reset Code for Exotic Beds',
       text: `Your password reset code is ${code}.`,
