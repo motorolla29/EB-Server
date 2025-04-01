@@ -408,10 +408,7 @@ class UserController {
         const result = await mailService.sendActivationLink(
           email,
           `${process.env.API_URL}/api/user/activate/${activationLink}`
-        );
-        if (!result || result.error) {
-          throw new Error('Mail service reported failure');
-        }
+        );\
       } catch (mailError) {
         console.error('Error sending email:', mailError.message);
         return next(
