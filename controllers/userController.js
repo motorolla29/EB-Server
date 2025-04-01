@@ -12,6 +12,7 @@ const tokenService = require('../services/token-service');
 const { validationResult } = require('express-validator');
 const UserDto = require('../dtos/UserDto');
 const { Op } = require('sequelize');
+const redis = require('../config/redis');
 
 class UserController {
   async registration(req, res, next) {
@@ -537,6 +538,95 @@ class UserController {
     } catch (error) {
       console.error(error);
       return next(ApiError.internal('Failed to update contact data'));
+    }
+  }
+
+  async sendPasswordResetCode(req, res, next) {
+    try {
+      const { email } = req.body;
+      if (!email) {
+        return next(ApiError.badRequest('Email is required'));
+      }
+
+      const user = await User.findOne({
+        where: { email: email.toLowerCase() },
+      });
+      if (!user) {
+        return next(ApiError.badRequest('User with such email not found'));
+      }
+
+      const code = Math.floor(1000 + Math.random() * 9000).toString();
+
+      await redis.set(`reset_code:${email.toLowerCase()}`, code, {
+        ex: 600, // 10 минут продолжительность жизни
+      });
+
+      try {
+        await mailService.sendPasswordResetCode(email, code);
+      } catch (mailError) {
+        console.error(
+          'Error sending reset password code to email:',
+          mailError.message
+        );
+      }
+
+      return res.json({ message: 'Reset code has been sent to your email' });
+    } catch (error) {
+      console.error('Error in sendPasswordResetCode:', error.message);
+      return next(ApiError.internal('Failed to send reset code'));
+    }
+  }
+
+  async verifyPasswordResetCode(req, res, next) {
+    try {
+      const { email, inputCode } = req.body;
+      if (!email || !inputCode) {
+        return next(ApiError.badRequest('Email and code are required'));
+      }
+
+      const storedCode = await redis.get(`reset_code:${email.toLowerCase()}`);
+
+      if (!storedCode || storedCode !== inputCode) {
+        return next(ApiError.badRequest('Invalid or expired reset code'));
+      }
+
+      return res.json({ message: 'Reset code is valid' });
+    } catch (error) {
+      console.error('Error in verifyResetPasswordCode:', error.message);
+      return next(ApiError.internal('Failed to verify reset code'));
+    }
+  }
+
+  async updatePassword(req, res, next) {
+    try {
+      const { email, inputCode, newPassword } = req.body;
+      if (!email || !inputCode || !newPassword) {
+        return next(
+          ApiError.badRequest('Email, code and new password are required')
+        );
+      }
+
+      const user = await User.findOne({
+        where: { email: email.toLowerCase() },
+      });
+      if (!user) {
+        return next(ApiError.badRequest('User not found'));
+      }
+
+      const storedCode = await redis.get(`reset_code:${email.toLowerCase()}`);
+      if (!storedCode || storedCode !== inputCode) {
+        return next(ApiError.badRequest('Invalid or expired reset code'));
+      }
+
+      await redis.del(`reset_code:${email.toLowerCase()}`);
+
+      const hashPassword = await bcrypt.hash(newPassword, 5);
+      await user.update({ password: hashPassword });
+
+      return res.json({ message: 'Password updated successfully' });
+    } catch (error) {
+      console.error('Error in updatePassword:', error.message);
+      return next(ApiError.internal('Failed to update password'));
     }
   }
 }

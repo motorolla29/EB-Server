@@ -159,6 +159,38 @@ class MailService {
         </div>`,
     });
   }
+  async sendPasswordResetCode(email, code) {
+    await this.transporter.sendMail({
+      from: process.env.SMTP_USER,
+      to: email,
+      subject: 'Your Password Reset Code for Exotic Beds',
+      text: `Your password reset code is ${code}.`,
+      html: `
+          <div style="font-family: 'Anja Eliane', system-ui, sans-serif; color: #333; line-height: 1.6; padding: 20px; max-width: 600px; margin: auto; border: 1px solid #ddd; border-radius: 10px; background-color: #C4E2CF;">
+            <style>
+              @import url('https://fonts.cdnfonts.com/css/anja-eliane');
+            </style>
+            <div style="text-align: center; margin-bottom: 20px;">
+              <img src="https://ik.imagekit.io/motorolla29/exotic-beds/logo/EB-LOGO-HD.png?tr=w-500" alt="Exotic Beds Logo" style="max-width: 150px;"/>
+            </div>
+            <h1 style="color: #004757; font-size: 28px; text-align: center; font-weight: 400;">Password Reset</h1>
+            <p style="font-size: 16px; text-align: center; color: #4F4A57;">
+              We received a request to reset your password.
+            </p>
+            <p style="font-size: 20px; text-align: center; color: #004757; margin: 20px 0;">
+              <strong>${code}</strong>
+            </p>
+            <p style="font-size: 14px; text-align: center; color: #4F4A57;">
+              Use the code above to reset your password.
+            </p>
+            <footer style="margin-top: 20px; text-align: center; font-size: 12px; color: #522E4C;">
+              <p>© 2025 Exotic Beds. All rights reserved.</p>
+              <p style="margin: 0;">Need help? Contact us at <a href="mailto:eutyou@gmail.com" style="color: #522E4C;">eutyou@gmail.com</a></p>
+            </footer>
+          </div>
+        `,
+    });
+  }
 }
 
 module.exports = new MailService();

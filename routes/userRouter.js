@@ -29,5 +29,11 @@ router.post(
   authMiddleware,
   userController.updateContactData
 );
+router.post('/send-password-reset-code', userController.sendPasswordResetCode);
+router.post(
+  '/verify-password-reset-code',
+  userController.verifyPasswordResetCode
+);
+router.post('/update-password', userController.updatePassword);
 
 module.exports = router;

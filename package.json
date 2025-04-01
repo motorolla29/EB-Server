@@ -11,6 +11,7 @@
   "license": "ISC",
   "dependencies": {
     "@mollie/api-client": "^4.2.0",
+    "@upstash/redis": "^1.34.6",
     "axios": "^1.7.9",
     "bcrypt": "^5.1.1",
     "bcryptjs": "^2.4.3",
