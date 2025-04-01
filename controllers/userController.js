@@ -405,22 +405,26 @@ class UserController {
 
       // Попытка отправки письма активации
       try {
-        await mailService.sendActivationLink(
+        const result = await mailService.sendActivationLink(
           email,
           `${process.env.API_URL}/api/user/activate/${activationLink}`
         );
+        if (!result || result.error) {
+          throw new Error('Mail service reported failure');
+        }
       } catch (mailError) {
-        console.error('Error sending activation email:', mailError.message);
+        console.error('Error sending email:', mailError.message);
         return next(
           ApiError.internal(
-            'Failed to send activation email. Please try again later.'
+            'Failed to send activation link. Please try again later.'
           )
         );
       }
+
       return res.json({
         message: 'Activation email has been resent successfully',
       });
-    } catch {
+    } catch (error) {
       console.error('Server Error:', error.message);
       return next(ApiError.internal('Unexpected server error occurred'));
     }

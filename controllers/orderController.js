@@ -254,7 +254,6 @@ class OrderController {
             // Отправка письма с подтверждением заказа
             try {
               await mailService.sendOrderDetails(order);
-              console.log('mail sended');
             } catch (emailError) {
               console.error(
                 'Error sending order details email:',

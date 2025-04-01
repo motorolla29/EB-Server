@@ -39,6 +39,7 @@ class MailService {
         `,
     });
   }
+
   async sendOrderDetails(order) {
     const { email } = order;
     if (!email) return;
