@@ -24,5 +24,6 @@ module.exports = new Sequelize(
       },
     },
     logging: false, // Отключить SQL-логирование для повышения читаемости консоли
+    timezone: '+03:00',
   }
 );
