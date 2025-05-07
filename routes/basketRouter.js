@@ -16,5 +16,6 @@ router.post(
   authMiddleware,
   basketController.removeProductFromBasket
 );
+router.post('/sync-guest-cart', basketController.syncLocalCart);
 
 module.exports = router;

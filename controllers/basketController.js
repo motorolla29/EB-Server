@@ -1,4 +1,5 @@
-const { BasketProduct, Basket } = require('../models/models');
+const { Op } = require('sequelize');
+const { BasketProduct, Basket, Product } = require('../models/models');
 
 class BasketController {
   async getBasket(req, res) {
@@ -86,6 +87,44 @@ class BasketController {
         order: [['createdAt', 'DESC']],
       })
     );
+  }
+
+  async syncLocalCart(req, res, next) {
+    try {
+      // Ожидаем body = [ { id, quantity, title, price, ... }, ... ]
+      const clientCart = Array.isArray(req.body) ? req.body : [];
+      if (!clientCart.length) return res.json([]);
+
+      // Получаем только id и availableQuantity
+      const ids = clientCart.map((i) => i.id);
+      let dbItems;
+      try {
+        dbItems = await Product.findAll({
+          attributes: ['id', 'availableQuantity'],
+          where: { id: { [Op.in]: ids } },
+          raw: true,
+        });
+      } catch (dbErr) {
+        console.error('Error fetching from DB:', dbErr);
+        return next(dbErr);
+      }
+
+      const availMap = {};
+      dbItems.forEach(({ id, availableQuantity }) => {
+        availMap[id] = availableQuantity;
+      });
+
+      // Build synced result
+      const synced = clientCart.map((item) => {
+        const avail = availMap[item.id] ?? 0;
+        const newQty = Math.min(item.quantity, avail);
+        return { ...item, availableQuantity: avail, quantity: newQty };
+      });
+
+      return res.json(synced);
+    } catch (err) {
+      next(err);
+    }
   }
 }
 
