@@ -362,19 +362,31 @@ class ProductController {
     switch (sortBy) {
       case 'price_asc':
         order.push([literal('COALESCE("sale","price")'), 'ASC']);
-        order.push(['id', 'ASC']);
+        order.push(
+          literal(`CASE WHEN "createdAt" IS NULL THEN 1 ELSE 0 END`),
+          literal(`"createdAt" DESC`)
+        );
         break;
       case 'price_desc':
         order.push([literal('COALESCE("sale","price")'), 'DESC']);
-        order.push(['id', 'ASC']);
+        order.push(
+          literal(`CASE WHEN "createdAt" IS NULL THEN 1 ELSE 0 END`),
+          literal(`"createdAt" DESC`)
+        );
         break;
       case 'rating':
         order.push(['rating', 'DESC']);
-        order.push(['id', 'ASC']);
+        order.push(
+          literal(`CASE WHEN "createdAt" IS NULL THEN 1 ELSE 0 END`),
+          literal(`"createdAt" DESC`)
+        );
         break;
       case 'recent':
-        order.push([literal('"isNew" DESC')]);
-        order.push(['createdAt', 'DESC']);
+        order.push(
+          literal(`CASE WHEN "isNew" = TRUE THEN 0 ELSE 1 END`),
+          literal(`CASE WHEN "createdAt" IS NULL THEN 1 ELSE 0 END`),
+          literal(`"createdAt" DESC`)
+        );
         break;
       case 'discount':
         order.push([
@@ -383,22 +395,35 @@ class ProductController {
           ),
           'DESC',
         ]);
-        order.push(['id', 'ASC']);
+        order.push(
+          literal(`CASE WHEN "createdAt" IS NULL THEN 1 ELSE 0 END`),
+          literal(`"createdAt" DESC`)
+        );
         break;
       case 'relevance':
         if (relevanceOrder) {
-          order.push(relevanceOrder);
-          order.push(['id', 'ASC']);
+          order.push(
+            relevanceOrder,
+            literal(`CASE WHEN "createdAt" IS NULL THEN 1 ELSE 0 END`),
+            literal(`"createdAt" DESC`)
+          );
         }
         break;
       default:
         // Если нет sortBy, но есть q — сортируем по релевантности
         if (!sortBy && relevanceOrder) {
-          order.push(relevanceOrder);
-          order.push(['id', 'ASC']);
+          order.push(
+            relevanceOrder,
+            literal(`CASE WHEN "createdAt" IS NULL THEN 1 ELSE 0 END`),
+            literal(`"createdAt" DESC`)
+          );
         } else {
-          order.push(['createdAt', 'DESC'], ['updatedAt', 'DESC']);
-          order.push(['id', 'ASC']);
+          order.push(
+            literal(`CASE WHEN "createdAt" IS NULL THEN 1 ELSE 0 END`),
+            literal(`"createdAt" DESC`),
+            literal(`CASE WHEN "updatedAt" IS NULL THEN 1 ELSE 0 END`),
+            literal(`"updatedAt" DESC`)
+          );
         }
     }
 
