@@ -6,7 +6,6 @@ module.exports = function optionalAuth(req, res, next) {
   }
   const authHeader = req.headers.authorization;
   if (!authHeader) {
-    // неавторизованный пользователь — без ошибки
     req.user = null;
     return next();
   }
@@ -19,11 +18,17 @@ module.exports = function optionalAuth(req, res, next) {
 
   const token = parts[1];
   try {
+    // попробуем валидацию
     const decoded = tokenService.validateAccessToken(token);
-    req.user = decoded || null;
-  } catch (e) {
-    // игнорируем ошибки валидации токена
+    req.user = decoded;
+    return next();
+  } catch (err) {
+    // если именно expired — отдадим 401, чтобы axios‑interceptor сделал refresh
+    if (err.name === 'TokenExpiredError' || /expired/.test(err.message)) {
+      return res.status(401).json({ message: 'Access token expired' });
+    }
+    // во всех остальных "не‑expired" ошибках — молча пропускаем как guest
     req.user = null;
+    return next();
   }
-  return next();
 };

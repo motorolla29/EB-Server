@@ -6,7 +6,7 @@ const {
 } = require('../models/models');
 const ApiError = require('../error/ApiError');
 const sequelize = require('../db');
-const { Op, literal, fn } = require('sequelize');
+const { Op, literal, fn, col } = require('sequelize');
 const {
   updateLovelistAvailabilityForProduct,
 } = require('../services/lovelist-service');
@@ -288,16 +288,17 @@ class ProductController {
     limit = parseInt(limit, 10);
     const offset = (page - 1) * limit;
 
+    // ФИЛЬТРАЦИЯ
     const where = [];
 
-    // Фильтрация по категориям: либо по ID, либо по имени
+    // По категориям: по ID, либо по имени
     if (categoryId) {
       const arr = Array.isArray(categoryId) ? categoryId : [categoryId];
       where.push({ categoryId: { [Op.in]: arr.map(Number) } });
     }
-    // (Опционально: поддержка фильтрации по имени категории)
+    // Todo: (опционально) - поддержка фильтрации по имени категории
 
-    // Диапазон цены (используем COALESCE, чтобы подхватить sale если есть)
+    // По диапазону цены (используем COALESCE, чтобы подхватить sale если есть)
     if (minPrice || maxPrice) {
       const min = minPrice ? +minPrice : 0;
       const max = maxPrice ? +maxPrice : 1e9;
@@ -306,12 +307,12 @@ class ProductController {
       );
     }
 
-    // Рейтинг
+    // По рейтингу
     if (minRating) {
       where.push({ rating: { [Op.gte]: +minRating } });
     }
 
-    // Серии
+    // По сериям
     if (series) {
       const arr = Array.isArray(series) ? series : [series];
       where.push({
@@ -321,7 +322,7 @@ class ProductController {
       });
     }
 
-    // Флаги
+    // По флагам topRated, sale, isNew (only)
     if (topRated === 'true') where.push(literal(`rating >= 4.9`));
     if (sale === 'true') where.push({ sale: { [Op.not]: null } });
     if (isNew === 'true') where.push({ isNew: true });
@@ -349,7 +350,7 @@ class ProductController {
       where.push({ availableQuantity: { [Op.gt]: 0 } });
     }
 
-    // Сортировка
+    // СОРТИРОВКА
     const order = [];
 
     // ADMIN: сначала по наличию
@@ -427,7 +428,7 @@ class ProductController {
         }
     }
 
-    // Выполняем запрос
+    // Основной запрос
     const products = await Product.findAndCountAll({
       where: { [Op.and]: where },
       order,
@@ -435,6 +436,7 @@ class ProductController {
       offset,
     });
 
+    // ПОЛУЧЕНИЕ ДИАПАЗОНА ЦЕНЫ
     const whereForPriceRange = [];
     // Фильтруем по категории, если она передана
     if (categoryId) {
@@ -454,7 +456,8 @@ class ProductController {
         })),
       });
     }
-    // Запрос минимальной и максимальной цены по всей коллекции (без фильтров)
+    // Запрос минимальной и максимальной цены по всей коллекции
+    // (ограниченной только категорией или поисковым запросом)
     const priceRange = await Product.findOne({
       attributes: [
         [fn('MIN', literal('COALESCE("sale", "price")')), 'minPrice'],
@@ -464,12 +467,12 @@ class ProductController {
       raw: true,
     });
     const minPriceResult = priceRange ? priceRange.minPrice : 0;
-    const maxPriceResult = priceRange ? priceRange.maxPrice : 10000;
+    const maxPriceResult = priceRange ? priceRange.maxPrice : 99999;
 
-    // COUNTS OBJECTS
+    // СЧЕТЧИКИ ДЛЯ БЛОКА ФИЛЬТРОВ
     const filterCounts = {};
 
-    // category counts
+    // Категории
     const categoryCountsWhere = [];
     if (q && q.trim()) {
       const token = q.trim().toLowerCase();
@@ -495,59 +498,58 @@ class ProductController {
       {}
     );
 
-    // rating counts
-    const ratingThresh = [4, 3, 2, 1];
-    const whereWithoutRating = where.filter((clause) => {
-      if (clause && typeof clause === 'object' && clause.rating) {
-        // Это условие вида: { rating: { [Op.gte]: N } }
-        return false;
+    // Рейтинг
+    const whereWithoutRating = where.filter(
+      (clause) => !(clause && clause.rating)
+    );
+
+    const ratingBuckets = [4, 3, 2, 1];
+
+    const ratingAttrs = ratingBuckets.map((lower) => {
+      if (lower === 4) {
+        return [
+          fn(
+            'SUM',
+            literal(`CASE WHEN "rating" >= ${lower} THEN 1 ELSE 0 END`)
+          ),
+          String(lower),
+        ];
       }
-      return true;
+      return [
+        fn(
+          'SUM',
+          literal(
+            `CASE WHEN "rating" >= ${lower} AND "rating" < ${
+              lower + 1
+            } THEN 1 ELSE 0 END`
+          )
+        ),
+        String(lower),
+      ];
     });
-    filterCounts.ratingCounts = {};
 
-    for (let i = 0; i < ratingThresh.length; i++) {
-      const lower = ratingThresh[i];
-      const upper = i === 0 ? 5 : ratingThresh[i - 1]; // верхняя граница
+    ratingAttrs.push([fn('COUNT', literal('*')), '0']);
 
-      const whereRt = {
-        [Op.and]: [
-          ...whereWithoutRating,
-          ...(i === 0
-            ? [{ rating: { [Op.gte]: lower, [Op.lte]: upper } }]
-            : [{ rating: { [Op.gte]: lower, [Op.lt]: upper } }]),
-        ],
-      };
-      if (user.role !== 'ADMIN') {
-        whereRt.availableQuantity = { [Op.gt]: 0 };
-      }
-
-      filterCounts.ratingCounts[lower] = await Product.count({
-        where: whereRt,
-      });
+    const whereForCounts = { [Op.and]: whereWithoutRating };
+    if (user.role !== 'ADMIN') {
+      whereForCounts.availableQuantity = { [Op.gt]: 0 };
     }
-    const whereAllRates = { [Op.and]: whereWithoutRating };
-    filterCounts.ratingCounts[0] = await Product.count({
-      where: whereAllRates,
+
+    const ratingRaw = await Product.findOne({
+      attributes: ratingAttrs,
+      where: whereForCounts,
+      raw: true,
     });
 
-    // series counts
-    const whereWithoutSeries = where.filter((clause) => {
-      // Ищем конструкции Op.or, в которых фильтруется title по "%series%"
-      if (clause[Op.or]) {
-        return !clause[Op.or].every((cond) => {
-          const val = Object.values(cond)[0];
-          return (
-            val &&
-            typeof val[Op.iLike] === 'string' &&
-            val[Op.iLike].includes('series')
-          );
-        });
-      }
-      return true;
-    });
+    filterCounts.ratingCounts = ratingBuckets.reduce((acc, lower) => {
+      acc[lower] = +ratingRaw[String(lower)] || 0;
+      return acc;
+    }, {});
+    filterCounts.ratingCounts[0] = +ratingRaw['0'] || 0;
+
+    // Серии
     filterCounts.seriesCounts = {};
-    for (const s of [
+    const seriesList = [
       'Classic',
       'Sea',
       'Pokemon',
@@ -559,17 +561,21 @@ class ProductController {
       'Fruit',
       'Coral',
       'Cyberpunk',
-    ]) {
+    ];
+    for (const s of seriesList) {
       filterCounts.seriesCounts[s] = await Product.count({
         where: {
           [Op.and]: [
-            ...whereWithoutSeries,
-            literal(`LOWER("title") LIKE '%${s.toLowerCase()} series%'`),
+            ...where.filter((clause) => !clause[Op.or]),
+            sequelize.where(fn('LOWER', col('title')), {
+              [Op.like]: `%${s.toLowerCase()} series%`,
+            }),
           ],
         },
       });
     }
-    // switchers counts
+
+    // Флаги topRated, sale, isNew (only)
     filterCounts.topRatedCount = await Product.count({
       where: { [Op.and]: [...where, { rating: { [Op.gte]: 4.9 } }] },
     });
