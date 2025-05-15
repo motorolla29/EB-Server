@@ -547,8 +547,7 @@ class ProductController {
     }, {});
     filterCounts.ratingCounts[0] = +ratingRaw['0'] || 0;
 
-    // Серии
-    filterCounts.seriesCounts = {};
+    // Серии и переключатели параллельно
     const seriesList = [
       'Classic',
       'Sea',
@@ -562,29 +561,44 @@ class ProductController {
       'Coral',
       'Cyberpunk',
     ];
-    for (const s of seriesList) {
-      filterCounts.seriesCounts[s] = await Product.count({
+    const whereWithoutSeries = where.filter((clause) => !clause[Op.or]);
+    const seriesCountPromises = seriesList.map((s) =>
+      Product.count({
         where: {
           [Op.and]: [
-            ...where.filter((clause) => !clause[Op.or]),
-            sequelize.where(fn('LOWER', col('title')), {
-              [Op.like]: `%${s.toLowerCase()} series%`,
-            }),
+            ...whereWithoutSeries,
+            literal(`LOWER("title") LIKE '%${s.toLowerCase()} series%'`),
           ],
         },
-      });
-    }
-
-    // Флаги topRated, sale, isNew (only)
-    filterCounts.topRatedCount = await Product.count({
+      })
+    );
+    const topRatedPromise = Product.count({
       where: { [Op.and]: [...where, { rating: { [Op.gte]: 4.9 } }] },
     });
-    filterCounts.saleCount = await Product.count({
+    const salePromise = Product.count({
       where: { [Op.and]: [...where, { sale: { [Op.not]: null } }] },
     });
-    filterCounts.newCount = await Product.count({
+    const newPromise = Product.count({
       where: { [Op.and]: [...where, { isNew: true }] },
     });
+
+    // Запускаем параллельно
+    const [seriesCountsArr, topRatedCount, saleCount, newCount] =
+      await Promise.all([
+        Promise.all(seriesCountPromises),
+        topRatedPromise,
+        salePromise,
+        newPromise,
+      ]);
+
+    // Собираем результаты
+    filterCounts.seriesCounts = seriesList.reduce(
+      (o, s, idx) => ((o[s] = seriesCountsArr[idx]), o),
+      {}
+    );
+    filterCounts.topRatedCount = topRatedCount;
+    filterCounts.saleCount = saleCount;
+    filterCounts.newCount = newCount;
 
     return res.json({
       total: products.count,
