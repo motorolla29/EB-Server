@@ -429,7 +429,7 @@ class ProductController {
     }
 
     // Основной запрос
-    const products = await Product.findAndCountAll({
+    const productsPromise = Product.findAndCountAll({
       where: { [Op.and]: where },
       order,
       limit,
@@ -458,7 +458,7 @@ class ProductController {
     }
     // Запрос минимальной и максимальной цены по всей коллекции
     // (ограниченной только категорией или поисковым запросом)
-    const priceRange = await Product.findOne({
+    const priceRangePromise = Product.findOne({
       attributes: [
         [fn('MIN', literal('COALESCE("sale", "price")')), 'minPrice'],
         [fn('MAX', literal('COALESCE("sale", "price")')), 'maxPrice'],
@@ -466,11 +466,8 @@ class ProductController {
       where: whereForPriceRange,
       raw: true,
     });
-    const minPriceResult = priceRange ? priceRange.minPrice : 0;
-    const maxPriceResult = priceRange ? priceRange.maxPrice : 99999;
 
     // СЧЕТЧИКИ ДЛЯ БЛОКА ФИЛЬТРОВ
-    const filterCounts = {};
 
     // Категории
     const categoryCountsWhere = [];
@@ -487,16 +484,12 @@ class ProductController {
       categoryCountsWhere.push({ availableQuantity: { [Op.gt]: 0 } });
     }
 
-    const catRaw = await Product.findAll({
+    const categoryCountsPromise = Product.findAll({
       attributes: ['categoryId', [fn('COUNT', 'id'), 'count']],
       group: ['categoryId'],
       where: { [Op.and]: categoryCountsWhere },
       raw: true,
     });
-    filterCounts.categoryCounts = catRaw.reduce(
-      (a, { categoryId, count }) => ((a[categoryId] = +count), a),
-      {}
-    );
 
     // Рейтинг
     const whereWithoutRating = where.filter(
@@ -535,22 +528,15 @@ class ProductController {
       whereForCounts.availableQuantity = { [Op.gt]: 0 };
     }
 
-    const ratingRaw = await Product.findOne({
+    const ratingRawPromise = Product.findOne({
       attributes: ratingAttrs,
       where: whereForCounts,
       raw: true,
     });
 
-    filterCounts.ratingCounts = ratingBuckets.reduce((acc, lower) => {
-      acc[lower] = +ratingRaw[String(lower)] || 0;
-      return acc;
-    }, {});
-    filterCounts.ratingCounts[0] = +ratingRaw['0'] || 0;
-
     // Серии и переключатели параллельно
     // Вместо Promise.all(seriesCountPromises) + трёх отдельных count,
     // делаем один Product.findOne с SUM(CASE…) для каждой серии и для каждого свитчера.
-
     const seriesList = [
       'Classic',
       'Sea',
@@ -594,7 +580,7 @@ class ProductController {
     );
 
     // Компонуем единственный запрос
-    const switchersRaw = await Product.findOne({
+    const switchersRawPromise = Product.findOne({
       attributes: seriesAttrs,
       where: {
         // Берём из общего where все условия, **кроме** фильтрации по серии
@@ -605,14 +591,38 @@ class ProductController {
       raw: true,
     });
 
-    // Составляем filterCounts.seriesCounts и switchers
-    filterCounts.seriesCounts = seriesList.reduce((o, s) => {
-      o[s] = +switchersRaw[s] || 0;
-      return o;
-    }, {});
-    filterCounts.topRatedCount = +switchersRaw.topRatedCount || 0;
-    filterCounts.saleCount = +switchersRaw.saleCount || 0;
-    filterCounts.newCount = +switchersRaw.newCount || 0;
+    const [products, priceRange, catRaw, ratingRaw, switchersRaw] =
+      await Promise.all([
+        productsPromise,
+        priceRangePromise,
+        categoryCountsPromise,
+        ratingRawPromise,
+        switchersRawPromise,
+      ]);
+
+    const minPriceResult = priceRange?.minPrice ?? 0;
+    const maxPriceResult = priceRange?.maxPrice ?? 99999;
+
+    const filterCounts = {
+      categoryCounts: catRaw.reduce((acc, { categoryId, count }) => {
+        acc[categoryId] = +count;
+        return acc;
+      }, {}),
+      ratingCounts: ratingBuckets.reduce(
+        (o, t) => {
+          o[t] = +ratingRaw[t] || 0;
+          return o;
+        },
+        { 0: +ratingRaw['0'] || 0 }
+      ),
+      seriesCounts: seriesList.reduce((o, s) => {
+        o[s] = +switchersRaw[s] || 0;
+        return o;
+      }, {}),
+      topRatedCount: +switchersRaw.topRatedCount || 0,
+      saleCount: +switchersRaw.saleCount || 0,
+      newCount: +switchersRaw.newCount || 0,
+    };
 
     return res.json({
       total: products.count,
