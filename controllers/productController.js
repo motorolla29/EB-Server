@@ -548,6 +548,9 @@ class ProductController {
     filterCounts.ratingCounts[0] = +ratingRaw['0'] || 0;
 
     // Серии и переключатели параллельно
+    // Вместо Promise.all(seriesCountPromises) + трёх отдельных count,
+    // делаем один Product.findOne с SUM(CASE…) для каждой серии и для каждого свитчера.
+
     const seriesList = [
       'Classic',
       'Sea',
@@ -561,44 +564,55 @@ class ProductController {
       'Coral',
       'Cyberpunk',
     ];
-    const whereWithoutSeries = where.filter((clause) => !clause[Op.or]);
-    const seriesCountPromises = seriesList.map((s) =>
-      Product.count({
-        where: {
-          [Op.and]: [
-            ...whereWithoutSeries,
-            literal(`LOWER("title") LIKE '%${s.toLowerCase()} series%'`),
-          ],
-        },
-      })
+
+    // Собираем массив атрибутов вида:
+    // [ fn('SUM', literal(`CASE WHEN LOWER(title) LIKE '%sea series%' THEN 1 ELSE 0 END`)), 'Sea' ]
+    const seriesAttrs = seriesList.map((s) => [
+      fn(
+        'SUM',
+        literal(
+          `CASE WHEN LOWER("title") LIKE '%${s.toLowerCase()} series%' THEN 1 ELSE 0 END`
+        )
+      ),
+      s,
+    ]);
+
+    // Добавляем свитчеры: topRated, sale, isNew
+    seriesAttrs.push(
+      [
+        fn('SUM', literal(`CASE WHEN "rating" >= 4.9 THEN 1 ELSE 0 END`)),
+        'topRatedCount',
+      ],
+      [
+        fn('SUM', literal(`CASE WHEN "sale" IS NOT NULL THEN 1 ELSE 0 END`)),
+        'saleCount',
+      ],
+      [
+        fn('SUM', literal(`CASE WHEN "isNew" = TRUE THEN 1 ELSE 0 END`)),
+        'newCount',
+      ]
     );
-    const topRatedPromise = Product.count({
-      where: { [Op.and]: [...where, { rating: { [Op.gte]: 4.9 } }] },
-    });
-    const salePromise = Product.count({
-      where: { [Op.and]: [...where, { sale: { [Op.not]: null } }] },
-    });
-    const newPromise = Product.count({
-      where: { [Op.and]: [...where, { isNew: true }] },
+
+    // Компонуем единственный запрос
+    const switchersRaw = await Product.findOne({
+      attributes: seriesAttrs,
+      where: {
+        // Берём из общего where все условия, **кроме** фильтрации по серии
+        [Op.and]: where.filter((clause) => !clause[Op.or]),
+        // И, как прежде, убираем распроданные для не‑ADMIN
+        ...(user.role !== 'ADMIN' && { availableQuantity: { [Op.gt]: 0 } }),
+      },
+      raw: true,
     });
 
-    // Запускаем параллельно
-    const [seriesCountsArr, topRatedCount, saleCount, newCount] =
-      await Promise.all([
-        Promise.all(seriesCountPromises),
-        topRatedPromise,
-        salePromise,
-        newPromise,
-      ]);
-
-    // Собираем результаты
-    filterCounts.seriesCounts = seriesList.reduce(
-      (o, s, idx) => ((o[s] = seriesCountsArr[idx]), o),
-      {}
-    );
-    filterCounts.topRatedCount = topRatedCount;
-    filterCounts.saleCount = saleCount;
-    filterCounts.newCount = newCount;
+    // Составляем filterCounts.seriesCounts и switchers
+    filterCounts.seriesCounts = seriesList.reduce((o, s) => {
+      o[s] = +switchersRaw[s] || 0;
+      return o;
+    }, {});
+    filterCounts.topRatedCount = +switchersRaw.topRatedCount || 0;
+    filterCounts.saleCount = +switchersRaw.saleCount || 0;
+    filterCounts.newCount = +switchersRaw.newCount || 0;
 
     return res.json({
       total: products.count,
