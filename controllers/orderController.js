@@ -105,9 +105,16 @@ class OrderController {
       if (!order) {
         return next(ApiError.badRequest('Order not found'));
       }
-      if (order.userId !== req.user.id) {
-        return next(ApiError.forbidden('Access denied'));
+
+      // Если заказ «привязан» к конкретному userId
+      if (order.userId) {
+        // Но мы не авторизованы или UID не совпадает — запрещаем
+        if (!req.user || req.user.id !== order.userId) {
+          return next(ApiError.forbidden('Access denied'));
+        }
       }
+      // Иначе — это гостьевой заказ, отдаём без проверки
+
       return res.status(200).json(order);
     } catch (e) {
       return next(ApiError.badRequest(e.message));
