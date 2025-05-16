@@ -68,7 +68,7 @@ class OrderController {
         PaymentProviderFactory.getProvider(paymentProviderName);
       const paymentResult = await paymentProvider.processPayment(
         order,
-        `${returnUrl}/?orderId=${order.id}`
+        `${returnUrl}/?orderId=${order.id}&token=${order.token}`
       );
 
       order.paymentId = paymentResult.paymentId;
@@ -101,19 +101,24 @@ class OrderController {
   async getOrder(req, res, next) {
     try {
       const { id } = req.params;
+      const token = req.query.token;
+
       const order = await Order.findOne({ where: { id } });
       if (!order) {
-        return next(ApiError.badRequest('Order not found'));
+        return next(ApiError.notFound('Order not found'));
       }
 
-      // Если заказ «привязан» к конкретному userId
-      if (order.userId) {
-        // Но мы не авторизованы или UID не совпадает — запрещаем
-        if (!req.user || req.user.id !== order.userId) {
-          return next(ApiError.forbidden('Access denied'));
+      if (req.user) {
+        // авторизованный пользователь
+        if (order.userId !== req.user.id) {
+          return next(ApiError.forbidden('You don’t have access'));
+        }
+      } else {
+        // гость
+        if (!token || token !== order.token) {
+          return next(ApiError.notFound('Order not found'));
         }
       }
-      // Иначе — это гостьевой заказ, отдаём без проверки
 
       return res.status(200).json(order);
     } catch (e) {

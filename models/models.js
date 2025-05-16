@@ -81,6 +81,7 @@ const Category = sequelize.define('category', {
 
 const Order = sequelize.define('order', {
   id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
+  token: { type: DataTypes.UUID, defaultValue: DataTypes.UUIDV4, unique: true },
   userId: { type: DataTypes.INTEGER, allowNull: true },
   items: { type: DataTypes.JSON, allowNull: false },
   subtotal: { type: DataTypes.DECIMAL(12, 2) },
