@@ -12,7 +12,7 @@ class ProductService {
         if (product) {
           if (product.availableQuantity >= item.quantity) {
             product.availableQuantity -= item.quantity;
-            await product.save({ transaction });
+            await product.save({ transaction, silent: true });
 
             // Обновляем корзины: если в корзине указано количество больше, чем осталось
             await updateBasketQuantitiesForProduct(

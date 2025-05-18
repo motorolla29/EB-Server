@@ -408,11 +408,18 @@ class ProductController {
             literal(`CASE WHEN "createdAt" IS NULL THEN 1 ELSE 0 END`),
             literal(`"createdAt" DESC`)
           );
+        } else {
+          order.push(
+            literal(`CASE WHEN "updatedAt" IS NULL THEN 1 ELSE 0 END`),
+            literal(`"updatedAt" DESC`),
+            literal(`CASE WHEN "createdAt" IS NULL THEN 1 ELSE 0 END`),
+            literal(`"createdAt" DESC`)
+          );
         }
         break;
       default:
         // Если нет sortBy, но есть q — сортируем по релевантности
-        if (!sortBy && relevanceOrder) {
+        if (relevanceOrder) {
           order.push(
             relevanceOrder,
             literal(`CASE WHEN "createdAt" IS NULL THEN 1 ELSE 0 END`),
@@ -420,10 +427,10 @@ class ProductController {
           );
         } else {
           order.push(
-            literal(`CASE WHEN "createdAt" IS NULL THEN 1 ELSE 0 END`),
-            literal(`"createdAt" DESC`),
             literal(`CASE WHEN "updatedAt" IS NULL THEN 1 ELSE 0 END`),
-            literal(`"updatedAt" DESC`)
+            literal(`"updatedAt" DESC`),
+            literal(`CASE WHEN "createdAt" IS NULL THEN 1 ELSE 0 END`),
+            literal(`"createdAt" DESC`)
           );
         }
     }
