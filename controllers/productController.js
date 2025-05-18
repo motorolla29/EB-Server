@@ -79,11 +79,11 @@ class ProductController {
 
       const product = await Product.findOne({ where: { id } });
 
-      const isNew = product.isNew;
-
       if (!product) {
         return next(ApiError.badRequest('Product not found'));
       }
+
+      const isNew = product.isNew;
 
       let newId = id;
 
