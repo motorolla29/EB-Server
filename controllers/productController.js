@@ -97,8 +97,10 @@ class ProductController {
           // Проверяем, существует ли товар с новым id
           const existingProduct = await Product.findOne({
             where: { id: newId },
+            transaction,
           });
           if (existingProduct) {
+            await transaction.rollback();
             return next(
               ApiError.badRequest('Product with this ID already exists')
             );
@@ -153,10 +155,10 @@ class ProductController {
 
           await Review.update(
             { productId: newId },
-            { where: { productId: id } }
+            { where: { productId: id }, transaction }
           );
 
-          await Product.destroy({ where: { id } });
+          await Product.destroy({ where: { id }, transaction });
 
           await updateBasketQuantitiesForProduct(
             newId,
