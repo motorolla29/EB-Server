@@ -337,14 +337,35 @@ class ProductController {
       const tokens = token.split(/\s+/).map((t) => t.replace(/[%_]/g, '\\$&'));
       where.push({
         [Op.and]: tokens.map((t) => ({
-          title: { [Op.iLike]: `%${t}%` },
+          [Op.or]: [
+            { title: { [Op.iLike]: `%${t}%` } },
+            { description: { [Op.iLike]: `%${t}%` } },
+          ],
         })),
       });
+
       // для сортировки по релевантности будем использовать функцию similarity()
       // (нужен pg_trgm и индекс GIN на title gin_trgm_ops)
-      relevanceOrder = literal(
-        `similarity("title", ${sequelize.escape(token)}) DESC`
-      );
+      // релевантность по similarity (по title и description)
+
+      const simParts = tokens
+        .map(
+          (t) => `
+  GREATEST(similarity("title", ${sequelize.escape(
+    t
+  )}), similarity("description", ${sequelize.escape(t)}))
+`
+        )
+        .join(', ');
+
+      relevanceOrder = literal(`
+  CASE
+    WHEN "title" ILIKE ${sequelize.escape(`%${token}%`)} THEN 2
+    WHEN "description" ILIKE ${sequelize.escape(`%${token}%`)} THEN 1
+    ELSE 0
+  END DESC,
+  GREATEST(${simParts}) DESC
+`);
     }
 
     // Ролевое правило: не-ADMIN не видит отсутствующие
