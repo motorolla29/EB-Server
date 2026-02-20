@@ -22,7 +22,7 @@ class MailService {
         @import url('https://fonts.cdnfonts.com/css/anja-eliane');
       </style>
       <div style="text-align: center; margin-bottom: 20px;">
-        <img src="https://ik.imagekit.io/motorolla29/exotic-beds/logo/EB-LOGO-HD.png?tr=w-500" alt="Exotic Beds Logo" style="max-width: 150px;"/>
+        <img src="https://exotic-beds.s3.cloud.ru/logo/EB-LOGO-HD.png" alt="Exotic Beds Logo" style="max-width: 150px;"/>
       </div>
       <h1 style="color: #004757; font-size: 28px; text-align: center; font-weight: 400;">Welcome to Exotic Beds!</h1>
       <p style="font-size: 16px; text-align: center; color: #4F4A57;">We’re excited to have you on board. To activate your account, simply click the button below:</p>
@@ -53,9 +53,9 @@ class MailService {
         (item) =>
           `<tr style="border-bottom: 1px solid #A1C6BA">
             <td style="padding: 20px 0; display: flex; align-items: flex-start;">
-              <img src="https://ik.imagekit.io/motorolla29/exotic-beds/catalog/${
+              <img src="https://exotic-beds.s3.cloud.ru/catalog/sm__${
                 item.photo
-              }?tr=w-150" alt="product_photo" style="width: 50px; height: 50px; border-radius: 5px; object-fit: contain; object-position: center; background: #eefef664">
+              }" alt="product_photo" style="width: 50px; height: 50px; border-radius: 5px; object-fit: contain; object-position: center; background: #eefef664">
               <span style="font-size: 14px; color: #004757; padding-left: 10px;">
                 ${item.title}
               </span>
@@ -66,7 +66,7 @@ class MailService {
             <td style="padding: 20px 10px 20px 10px; text-align: right; vertical-align: top; font-size: 14px; color: #004757; white-space: nowrap">
               ${item.sale || item.price} EUR
             </td>
-          </tr>`
+          </tr>`,
       )
       .join('');
 
@@ -74,8 +74,8 @@ class MailService {
     <h3 style="color: #004757; font-size: 20px; text-align: center; font-weight: 400; margin-bottom: 5px;">Delivery Details</h3>
     <p style="font-size: 16px; text-align: center; color: #4F4A57; margin: 0">
       ${order.country}, ${order.city}, ${order.address}${
-      order.apartment ? ` apt. ${order.apartment}` : ''
-    }
+        order.apartment ? ` apt. ${order.apartment}` : ''
+      }
     </p>
     <p style="font-size: 16px; text-align: center; color: #4F4A57; margin: 0">
       Estimated Delivery Date: ${expectedDeliveryDate}
@@ -102,7 +102,7 @@ class MailService {
             @import url('https://fonts.cdnfonts.com/css/anja-eliane');
           </style>
           <div style="text-align: center; margin-bottom: 20px;">
-            <img src="https://ik.imagekit.io/motorolla29/exotic-beds/logo/EB-LOGO-HD.png?tr=w-500" alt="Exotic Beds Logo" style="max-width: 150px;">
+            <img src="https://exotic-beds.s3.cloud.ru/logo/EB-LOGO-HD.png" alt="Exotic Beds Logo" style="max-width: 150px;">
           </div>
           <h1 style="color: #004757; font-size: 28px; text-align: center; font-weight: 400;">Thank You for Your Order!</h1>
           <p style="font-size: 16px; text-align: center; color: #4F4A57;">Your order <strong>№${
@@ -172,7 +172,7 @@ class MailService {
               @import url('https://fonts.cdnfonts.com/css/anja-eliane');
             </style>
             <div style="text-align: center; margin-bottom: 20px;">
-              <img src="https://ik.imagekit.io/motorolla29/exotic-beds/logo/EB-LOGO-HD.png?tr=w-500" alt="Exotic Beds Logo" style="max-width: 150px;"/>
+              <img src="https://exotic-beds.s3.cloud.ru/logo/EB-LOGO-HD.png" alt="Exotic Beds Logo" style="max-width: 150px;"/>
             </div>
             <h1 style="color: #004757; font-size: 28px; text-align: center; font-weight: 400;">Password Reset</h1>
             <p style="font-size: 16px; text-align: center; color: #4F4A57;">

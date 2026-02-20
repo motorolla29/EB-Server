@@ -1,4 +1,4 @@
-const cloudinary = require('../config/cloudinary');
+// const cloudinary = require('../config/cloudinary');
 const path = require('path');
 const os = require('os'); // Для получения системного пути к временным файлам
 const fs = require('fs');
@@ -277,47 +277,47 @@ class UserController {
         return next(ApiError.badRequest('No photo file provided'));
       }
 
-      // Проверка типа файла
-      const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg'];
+      // Новый загрузчик на cloud.ru
+      const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/webp'];
       if (!allowedTypes.includes(photo.mimetype)) {
         return next(ApiError.badRequest('Invalid file type'));
       }
 
-      // Генерация уникального имени для файла
-      const fileName = `${uuid.v4()}_USER_AVATAR`;
+      const ext =
+        photo.mimetype === 'image/png'
+          ? 'png'
+          : photo.mimetype === 'image/webp'
+          ? 'webp'
+          : 'jpg';
 
-      // Путь для временного сохранения файла (`/tmp`на Vercel)
-      const tempFilePath = path.join(os.tmpdir(), fileName);
+      const fileName = `${uuid.v4()}_USER_AVATAR.${ext}`;
 
-      // Сохраняем файл на сервере (это временное решение для тестов)
-      await fs.promises.writeFile(tempFilePath, photo.data);
+      const { uploadImageWithVariants } = require('../services/cloud-storage-service');
 
-      // Загрузка файла в Cloudinary
-      const uploadResult = await cloudinary.uploader.upload(
-        photo.tempFilePath,
-        {
-          folder: 'user-avatars', // Папка для хранения аватаров
-          public_id: fileName, // Уникальное имя файла
-          overwrite: true, // Перезапись существующего файла с таким именем
-          resource_type: 'image', // Указываем тип ресурса
-        }
-      );
-
-      // Удаляем временный файл
-      await fs.promises.unlink(tempFilePath);
+      const uploadResult = await uploadImageWithVariants({
+        buffer: photo.data,
+        filePath: photo.tempFilePath,
+        mimeType: photo.mimetype,
+        folder: 'user-avatars',
+        baseFileName: fileName,
+      });
 
       // Получение текущего пользователя и удаление старого аватара, если нужно
       const user = await User.findOne({
         where: { id: userData.id },
       });
       if (user.photo) {
-        await cloudinary.uploader.destroy(`user-avatars/${user.photo}`);
+        const { deleteImageWithVariants } = require('../services/cloud-storage-service');
+        await deleteImageWithVariants({
+          folder: 'user-avatars',
+          baseFileName: user.photo,
+        });
       }
 
-      // Сохранение URL изображения в базе данных
+      // Сохранение имени файла в базе данных
       await User.update(
         {
-          photo: fileName,
+          photo: uploadResult.fileName,
         },
         {
           where: { id: userData.id },
@@ -353,7 +353,11 @@ class UserController {
         return next(ApiError.notFound('User does not have an avatar'));
       }
 
-      await cloudinary.uploader.destroy(`user-avatars/${user.photo}`);
+      const { deleteImageWithVariants } = require('../services/cloud-storage-service');
+      await deleteImageWithVariants({
+        folder: 'user-avatars',
+        baseFileName: user.photo,
+      });
 
       // Удаление записи аватара из базы данных
       await User.update(
