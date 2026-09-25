@@ -115,9 +115,9 @@ async function uploadImageWithVariants({
   const commonOptions =
     targetFormat === 'jpeg'
       ? {
-          quality: 80, // Снижено с 85 для лучшей компрессии
+          quality: 70, // Снижено до 70 для лучшей компрессии
           mozjpeg: true,
-          chromaSubsampling: '4:2:0', // Более агрессивная субдискретизация вместо 4:4:4
+          chromaSubsampling: '4:2:0', // Агрессивная субдискретизация
           progressive: true // Прогрессивный JPEG для лучшей компрессии
         }
       : targetFormat === 'png'
@@ -127,11 +127,11 @@ async function uploadImageWithVariants({
           palette: true // Пробуем палитру если возможно
         }
       : targetFormat === 'webp'
-      ? { quality: 80, effort: 6 }
+      ? { quality: 70, effort: 6 }
       : {};
 
-  // Ограничиваем максимальную сторону оригинала до 1200px для достижения размера 150-300 КБ
-  const MAX_ORIGINAL_DIMENSION = 1200;
+  // Ограничиваем максимальную сторону оригинала до 1000px для достижения размера 300-350 КБ
+  const MAX_ORIGINAL_DIMENSION = 1000;
   let originalWidth = metadata.width;
   let originalHeight = metadata.height;
   let needsResize = false;
