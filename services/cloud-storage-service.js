@@ -68,7 +68,7 @@ async function deleteSingleObject(key) {
 
 /**
  * Загрузка изображения в cloud.ru с генерацией xs__/sm__/md__ вариантов.
- * Оригинал ограничивается максимальной стороной 2000px для оптимизации.
+ * Оригинал ограничивается максимальной стороной 1200px для оптимизации до 150-300 КБ.
  *
  * @param {Object} params
  * @param {Buffer} [params.buffer] - исходный файл
@@ -114,14 +114,14 @@ async function uploadImageWithVariants({
   // Улучшенные опции компрессии для лучшего соотношения размер/качество
   const commonOptions =
     targetFormat === 'jpeg'
-      ? { 
+      ? {
           quality: 80, // Снижено с 85 для лучшей компрессии
-          mozjpeg: true, 
+          mozjpeg: true,
           chromaSubsampling: '4:2:0', // Более агрессивная субдискретизация вместо 4:4:4
           progressive: true // Прогрессивный JPEG для лучшей компрессии
         }
       : targetFormat === 'png'
-      ? { 
+      ? {
           compressionLevel: 9,
           adaptiveFiltering: true,
           palette: true // Пробуем палитру если возможно
@@ -130,9 +130,8 @@ async function uploadImageWithVariants({
       ? { quality: 80, effort: 6 }
       : {};
 
-  // Ограничиваем максимальную сторону оригинала до 4000px для обеспечения зума
-  // При этом оптимизация качества (quality 80, progressive JPEG) сохраняет размер файла разумным
-  const MAX_ORIGINAL_DIMENSION = 4000;
+  // Ограничиваем максимальную сторону оригинала до 1200px для достижения размера 150-300 КБ
+  const MAX_ORIGINAL_DIMENSION = 1200;
   let originalWidth = metadata.width;
   let originalHeight = metadata.height;
   let needsResize = false;
